@@ -1,0 +1,49 @@
+implementation: cpp
+name: polynomial-evaluation
+description: |
+    This benchmark implements polynomial evaluation using Horner's rule.
+    A polynomial of degree n has the form: c₀ + c₁x + c₂x² + ... + cₙxⁿ
+    Instead of calculating each power of x separately (which would require n(n+1)/2 multiplications),
+    Horner's rule rearranges the calculation to: c₀ + x(c₁ + x(c₂ + ... + x(cₙ₋₁ + xcₙ)...))
+    This requires only n multiplications and n additions, making it much more efficient.
+code: |
+    #include <iostream>
+    #include <vector>
+    #include <iomanip>
+    #include <energy_signal.h>
+    
+    void run(int degree, double x, const std::vector<double>& coeffs) {
+        double result = 0.0;
+        for (int i = 0; i <= degree; i++) {
+            result = coeffs[i] + x * result;
+        }
+        std::cout << std::fixed << std::setprecision(6) << result << std::endl;
+    }
+    
+    int main(int argc, char *argv[]) {
+        int degree = std::stoi(argv[1]);
+        double x = std::stod(argv[2]);
+        
+        std::vector<double> coeffs(degree + 1);
+        for (int i = 0; i <= degree; i++) {
+            coeffs[i] = 1.0 / (i + 1);
+        }
+        
+        while (start_signal()) {
+            run(degree, x, coeffs);
+            stop_signal();
+        }
+        
+        return 0;
+    }
+dependencies:
+    - g++14
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+---
+args: [1000, 0.5]
+expected_stdout: |
+    1.693147

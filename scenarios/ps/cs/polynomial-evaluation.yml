@@ -1,0 +1,59 @@
+implementation: cs
+name: polynomial-evaluation
+description: |
+    This benchmark implements polynomial evaluation using Horner's rule.
+    A polynomial of degree n has the form: c₀ + c₁x + c₂x² + ... + cₙxⁿ
+    Instead of calculating each power of x separately (which would require n(n+1)/2 multiplications),
+    Horner's rule rearranges the calculation to: c₀ + x(c₁ + x(c₂ + ... + x(cₙ₋₁ + xcₙ)...))
+    This requires only n multiplications and n additions, making it much more efficient.
+code: |
+    using System.Runtime.InteropServices;
+
+    public class Program {
+        [DllImport("libenergy_signal", EntryPoint = "start_signal")]
+        public static extern bool start_signal();
+
+        [DllImport("libenergy_signal", EntryPoint = "stop_signal")]
+        public static extern void stop_signal();
+
+        static void run(int degree, double x, double[] coeffs) {
+            double result = 0.0;
+            for (int i = degree; i >= 0; i--) {
+                result = coeffs[i] + x * result;
+            }
+            Console.WriteLine($"{result:F6}");
+        }
+
+        public static void Main(string[] args) {
+            int degree = int.Parse(args[0]);
+            double x = double.Parse(args[1]);
+
+            double[] coeffs = new double[degree + 1];
+            coeffs[0] = 1.0;
+            for (int i = 0; i <= degree; i++) {
+                coeffs[i] = 1.0 / (i + 1);
+            }
+
+            while (start_signal()) {
+                run(degree, x, coeffs);
+                stop_signal();
+            }
+        }
+    }
+
+dependencies:
+    - dotnet-sdk_9 # 9.0.203
+options:
+    - -c Release
+    - -p:OutputType=Exe
+    - -p:ImplicitUsings=enable
+    - -p:Nullable=enable
+    - -p:AllowUnsafeBlocks=true
+    - -p:ServerGarbageCollection=true
+    - -p:ConcurrentGarbageCollection=true
+    - -p:OptimizationPreference=Speed
+    - -p:IlcInstructionSet=native
+---
+args: [1000, 0.5]
+expected_stdout: |
+    1.693147

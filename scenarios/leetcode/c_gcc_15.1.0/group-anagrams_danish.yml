@@ -1,0 +1,166 @@
+implementation: c
+name: gruppér-anagrammer
+description: | # https://leetcode.com/problems/group-anagrams/description/
+    Givet et array af strenge `strs`, gruppér anagrammerne sammen.
+    Du kan returnere svaret i vilkårlig rækkefølge.
+
+    Eksempel:
+    Input: strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+    Output: ["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+
+    Forklaring:
+    - Der er ingen streng i strs, der kan omarrangeres til at danne "bat".
+    - Strengene "nat" og "tan" er anagrammer, da de kan omarrangeres til hinanden.
+    - Strengene "ate", "eat" og "tea" er anagrammer, da de kan omarrangeres til hinanden.
+
+    Begrænsninger:
+    - 1 <= strs.length <= 10⁴
+    - 0 <= strs[i].length <= 100
+    - strs[i] består af små bogstaver i det engelske alfabet.
+code: | # https://leetcode.com/problems/group-anagrams/solutions/521631/in-c-what-a-pain
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <assert.h>
+    #include "uthash.h"
+
+    struct word {
+        char sorted[256];
+        char s[256];
+        UT_hash_handle hh;
+    };
+
+    int comp(const void *aa, const void *bb)
+    {
+        char a, b;
+        a = *(char *)aa;
+        b = *(char *)bb;
+
+        if (a < b)
+            return -1;
+        else if (a > b)
+            return 1;
+        else
+            return 0;
+    }
+
+    char *sort_string(char *s)
+    {
+        char *rs = malloc(strlen(s)+1);
+        assert(rs);
+        strcpy(rs, s);
+        qsort((void *)rs, strlen(s), 1, comp);
+        return rs;
+    }
+
+    int word_sort(struct word *a, struct word *b) {
+        return strcmp(a->sorted,b->sorted);
+    }
+
+    /**
+     * Return an array of arrays of size *returnSize.
+     * The sizes of the arrays are returned as *returnColumnSizes array.
+     * Note: Both returned array and *columnSizes array must be malloced, assume caller calls free().
+     */
+    char *** groupAnagrams(char ** strs, int strsSize, int* returnSize, int** returnColumnSizes){
+        struct word *w, *tmp;
+        int i;
+        struct word *words = NULL;
+
+        for (i = 0; i < strsSize; i++) {
+            char *sorted = sort_string(strs[i]);
+            w = (struct word *)malloc(sizeof *w);
+            strncpy(w->sorted, sorted, 256);
+            strncpy(w->s, strs[i], 256);
+            HASH_ADD_STR( words, sorted, w );
+            free(sorted);
+        }
+
+        char ***ret = malloc(strsSize * sizeof(char **));
+        int *retcolsizes = malloc(strsSize * sizeof(int));
+        *returnColumnSizes = retcolsizes;
+        assert(*returnColumnSizes);
+        assert(ret);
+
+        *returnSize = -1;
+        char *anagram = NULL;
+
+        /* XXX: what we would like is something like (python):
+         *      return dic.values();
+         * I know its C, but there has to be a better way.
+         */
+        HASH_SORT(words, word_sort);
+        HASH_ITER(hh, words, w, tmp) {
+            if (anagram != NULL && strcmp(w->sorted, anagram) == 0) {
+                ret[*returnSize][retcolsizes[*returnSize]] = w->s; // was malloc'ed
+                retcolsizes[*returnSize] += 1;
+            } else {
+                *returnSize += 1;
+                ret[*returnSize] = malloc(strsSize * sizeof(char *));
+                assert(ret[*returnSize]);
+                retcolsizes[*returnSize] = 0;
+                ret[*returnSize][retcolsizes[*returnSize]] = w->s; // was malloc'ed
+                retcolsizes[*returnSize] += 1;
+                anagram = w->sorted;
+            }
+        }
+
+        /* XXX: we are leaking a bunch of memory for the struct word's*/
+        *returnSize += 1;
+        return ret;
+    }
+
+    int main(int argc, char* argv[]) {
+        if (argc < 2) {
+            printf("[]\n");
+            return 0;
+        }
+        int strsSize = argc - 1;
+        char **strs = &argv[1];
+        int returnSize;
+        int *returnColumnSizes;
+        char ***res = groupAnagrams(strs, strsSize, &returnSize, &returnColumnSizes);
+
+        printf("[");
+        for (int i = 0; i < returnSize; i++) {
+            if (i) printf(", ");
+            printf("[");
+            for (int j = 0; j < returnColumnSizes[i]; j++) {
+                if (j) printf(", ");
+                printf("\"%s\"", res[i][j]);
+            }
+            printf("]");
+        }
+        printf("]\n");
+        return 0;
+    }
+dependencies:
+    - name: gcc15
+      version: 15.1.0
+    - name: uthash
+      version: 2.3.0
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+---
+args: ["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
+expected_stdout: |
+    [["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]]
+---
+args: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"]
+expected_stdout: |
+    [["a"], ["b"], ["c"], ["d"], ["e"], ["f"], ["g"], ["h"], ["i"], ["j"], ["k"], ["l"], ["m"], ["n"], ["o"], ["p"], ["q"], ["r"], ["s"], ["t"]]
+---
+args: ["ytclsllouu", "hhjm", "vvpzifp", "hdswrgllp", "qbloyuljd", "vwxocb", "mtsrj"]
+expected_stdout: |
+    [["vwxocb"], ["qbloyuljd"], ["ytclsllouu"], ["hdswrgllp"], ["vvpzifp"], ["hhjm"], ["mtsrj"]]
+---
+args: ["idgs", "cmkopf", "tvhtnbgwi", "zvri"]
+expected_stdout: |
+    [["tvhtnbgwi"], ["cmkopf"], ["idgs"], ["zvri"]]
+---
+args: ["epdwfetvw", "s"]
+expected_stdout: |
+    [["epdwfetvw"], ["s"]]

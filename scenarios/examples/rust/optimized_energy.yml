@@ -1,0 +1,65 @@
+implementation: rust
+name: matrix-multiplication-optimized
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    use std::env;
+    use rayon::prelude::*;
+
+    fn main() {
+        let args: Vec<String> = env::args().collect();
+        if args.len() != 2 {
+            eprintln!("Usage: {} <n>", args[0]);
+            std::process::exit(1);
+        }
+        let n: usize = args[1].parse().expect("Please provide a valid integer for n");
+        let size = n.checked_mul(n).expect("Size overflow");
+
+        let mut a = vec![0.0_f64; size];
+        let mut b = vec![0.0_f64; size];
+        let mut c = vec![0.0_f64; size];
+
+        // Initialize A and B in parallel
+        a.par_iter_mut().enumerate().for_each(|(idx, val)| {
+            let i = idx / n;
+            let j = idx % n;
+            *val = (i + j) as f64;
+        });
+        b.par_iter_mut().enumerate().for_each(|(idx, val)| {
+            let i = idx / n;
+            let j = idx % n;
+            *val = (i + j) as f64;
+        });
+
+        // Parallelize outer 'i' loop
+        c.par_chunks_mut(n)
+            .enumerate()
+            .for_each(|(i, row)| {
+                for j in 0..n {
+                    let mut sum = 0.0_f64;
+                    for k in 0..n {
+                        sum += a[i * n + k] * b[k * n + j];
+                    }
+                    row[j] = sum;
+                }
+            });
+
+        println!("{}", c[n * n - 1] as u64);
+    }
+dependencies:
+    - name: cargo
+      version: 1.86.0
+    - name: rustc
+      version: 1.86.0
+options:
+    - --release
+    - --config profile.release.codegen-units=1
+packages:
+    - name: rayon
+      version: 1.10.0
+---
+args: [200]
+expected_stdout: |
+    18487100

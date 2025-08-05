@@ -1,0 +1,91 @@
+implementation: c
+name: matrix-multiplication-optimized
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <omp.h>
+
+    int main(int argc, char *argv[]) {
+        int n = atoi(argv[1]);
+        // Adjusted to account for cache associativity and other overhead
+        const int L1_BLOCK_SIZE = 64; // L1 cache-friendly block size
+
+        // L2 block: Larger blocking for L2 cache utilization
+        const int L2_BLOCK_SIZE = 256; // L2 cache-friendly block size
+
+        // Allocate memory with proper alignment for better cache performance
+        // 64-byte alignment matches cache line size for Intel CPUs
+        double *A = aligned_alloc(64, n * n * sizeof(double));
+        double *B = aligned_alloc(64, n * n * sizeof(double));
+        double *C = aligned_alloc(64, n * n * sizeof(double));
+
+        // Initialize matrices - using parallel initialization with OpenMP
+        #pragma omp parallel for schedule(static)
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                A[i*n + j] = B[i*n + j] = i + j;
+            }
+        }
+
+        // Zero out C matrix
+        memset(C, 0, n * n * sizeof(double));
+
+        // Set number of threads to match physical cores (avoid hyperthreading contention)
+        omp_set_num_threads(6);
+
+        // Three-level blocking approach: L3 -> L2 -> L1
+        // Outer loops handle largest blocks for L3 cache
+        #pragma omp parallel for collapse(2) schedule(guided)
+        for (int i2 = 0; i2 < n; i2 += L2_BLOCK_SIZE) {
+            for (int j2 = 0; j2 < n; j2 += L2_BLOCK_SIZE) {
+                // Process L2 cache-sized blocks
+                for (int k2 = 0; k2 < n; k2 += L2_BLOCK_SIZE) {
+
+                    // Process L1 cache-sized blocks
+                    for (int i1 = i2; i1 < i2 + L2_BLOCK_SIZE && i1 < n; i1 += L1_BLOCK_SIZE) {
+                        for (int j1 = j2; j1 < j2 + L2_BLOCK_SIZE && j1 < n; j1 += L1_BLOCK_SIZE) {
+                            for (int k1 = k2; k1 < k2 + L2_BLOCK_SIZE && k1 < n; k1 += L1_BLOCK_SIZE) {
+
+                                // Process individual elements within L1 block
+                                // i-k-j ordering for better locality
+                                for (int i = i1; i < i1 + L1_BLOCK_SIZE && i < n; i++) {
+                                    for (int k = k1; k < k1 + L1_BLOCK_SIZE && k < n; k++) {
+                                        double a_ik = A[i*n + k];
+
+                                        // Vectorization-friendly inner loop (contiguous memory access)
+                                        for (int j = j1; j < j1 + L1_BLOCK_SIZE && j < n; j++) {
+                                            C[i*n + j] += a_ik * B[k*n + j];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        printf("%.0f\n", C[n*n - 1]);
+
+        free(A);
+        free(B);
+        free(C);
+        return 0;
+    }
+dependencies:
+    - name: gcc
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+    - -fopenmp
+---
+args: [200]
+expected_stdout: |
+    18487100

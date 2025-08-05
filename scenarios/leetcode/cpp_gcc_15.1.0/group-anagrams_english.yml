@@ -1,0 +1,98 @@
+implementation: cpp
+name: group-anagrams
+description: | # https://leetcode.com/problems/group-anagrams/description/
+    Given an array of strings `strs`, group the anagrams together.
+    You can return the answer in any order.
+
+    Example:
+    Input: strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+    Output: [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+
+    Explanation:
+    - There is no string in strs that can be rearranged to form "bat".
+    - The strings "nat" and "tan" are anagrams as they can be rearranged to form each other.
+    - The strings "ate", "eat", and "tea" are anagrams as they can be rearranged to form each other.
+
+    Constraints:
+    - 1 <= strs.length <= 10⁴
+    - 0 <= strs[i].length <= 100
+    - strs[i] consists of lowercase English letters.
+code: | # https://leetcode.com/problems/group-anagrams/solutions/19200/c-unordered-map-and-counting-sort
+    #include <iostream>
+    #include <vector>
+    #include <string>
+    #include <unordered_map>
+    #include <algorithm>
+    using namespace std;
+
+    class Solution {
+    public:
+        vector<vector<string>> groupAnagrams(vector<string>& strs) {
+            unordered_map<string, vector<string>> mp;
+            for (string s : strs) {
+                string t = s;
+                sort(t.begin(), t.end());
+                mp[t].push_back(s);
+            }
+            vector<vector<string>> anagrams;
+            for (auto p : mp) {
+                anagrams.push_back(p.second);
+            }
+            return anagrams;
+        }
+    };
+
+    int main(int argc, char* argv[]) {
+        vector<string> input;
+        for (int i = 1; i < argc; ++i) {
+            input.emplace_back(argv[i]);
+        }
+
+        Solution sol;
+        auto res = sol.groupAnagrams(input);
+
+        if (res.empty()) {
+            cout << "[]\n";
+        } else {
+            cout << "[";
+            for (size_t i = 0; i < res.size(); ++i) {
+                if (i) cout << ", ";
+                cout << "[";
+                for (size_t j = 0; j < res[i].size(); ++j) {
+                    if (j) cout << ", ";
+                    cout << "\"" << res[i][j] << "\"";
+                }
+                cout << "]";
+            }
+            cout << "]\n";
+        }
+        return 0;
+    }
+dependencies:
+    - name: gcc15
+      version: 15.1.0
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+---
+args: ["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
+expected_stdout: |
+    [["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]]
+---
+args: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"]
+expected_stdout: |
+    [["t"], ["s"], ["r"], ["q"], ["o"], ["a"], ["b"], ["p"], ["h"], ["n"], ["d"], ["k"], ["c"], ["i"], ["f"], ["g"], ["e"], ["j"], ["l"], ["m"]]
+---
+args: ["ytclsllouu", "hhjm", "vvpzifp", "hdswrgllp", "qbloyuljd", "vwxocb", "mtsrj"]
+expected_stdout: |
+    [["vwxocb"], ["qbloyuljd"], ["hdswrgllp"], ["vvpzifp"], ["mtsrj"], ["hhjm"], ["ytclsllouu"]]
+---
+args: ["idgs", "cmkopf", "tvhtnbgwi", "zvri"]
+expected_stdout: |
+    [["zvri"], ["tvhtnbgwi"], ["cmkopf"], ["idgs"]]
+---
+args: ["epdwfetvw", "s"]
+expected_stdout: |
+    [["s"], ["epdwfetvw"]]

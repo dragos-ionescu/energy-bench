@@ -1,0 +1,64 @@
+implementation: python
+name: matrix-multiplication-optimized
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    import os
+    import sys
+    import numpy as np
+
+    def main():
+        if len(sys.argv) != 2:
+            print(f"Usage: {sys.argv[0]} <n>")
+            sys.exit(1)
+
+        n = int(sys.argv[1])
+        L1_BLOCK = 64
+        L2_BLOCK = 256
+
+        os.environ["OMP_NUM_THREADS"] = "6"
+        os.environ["OPENBLAS_NUM_THREADS"] = "6"
+        os.environ["MKL_NUM_THREADS"] = "6"
+
+        # Aligned, contiguous double-precision matrices
+        A = np.fromfunction(lambda i, j: i + j, (n, n), dtype=np.float64)
+        B = A.copy()
+        C = np.zeros((n, n), dtype=np.float64)
+
+        # Three-level blocking: L3→L2→L1
+        for i2 in range(0, n, L2_BLOCK):
+            i2_end = min(i2 + L2_BLOCK, n)
+            for j2 in range(0, n, L2_BLOCK):
+                j2_end = min(j2 + L2_BLOCK, n)
+                for k2 in range(0, n, L2_BLOCK):
+                    k2_end = min(k2 + L2_BLOCK, n)
+
+                    for i1 in range(i2, i2_end, L1_BLOCK):
+                        i1_end = min(i1 + L1_BLOCK, n)
+                        for j1 in range(j2, j2_end, L1_BLOCK):
+                            j1_end = min(j1 + L1_BLOCK, n)
+                            for k1 in range(k2, k2_end, L1_BLOCK):
+                                k1_end = min(k1 + L1_BLOCK, n)
+
+                                # Core update (calls highly-tuned BLAS)
+                                C[i1:i1_end, j1:j1_end] += (
+                                    A[i1:i1_end, k1:k1_end] @
+                                    B[k1:k1_end, j1:j1_end]
+                                )
+        print(int(C[-1, -1]))
+
+    if __name__ == "__main__":
+        main()
+dependencies:
+    - name: python313
+      version: 3.13.3
+    - name: python313Packages.numpy
+      version: 2.2.5
+roptions:
+    - -OO
+---
+args: [200]
+expected_stdout: |
+    18487100

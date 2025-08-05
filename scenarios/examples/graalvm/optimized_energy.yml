@@ -1,0 +1,60 @@
+implementation: graalvm
+name: matrix-multiplication-optimized
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    import java.util.concurrent.*;
+    import java.util.stream.IntStream;
+
+    public class Program {
+        private static final int L1 = 64;
+        private static final int L2 = 256;
+
+        public static void main(String[] args) {
+            int n = Integer.parseInt(args[0]);
+            double[] A = new double[n * n];
+            double[] B = new double[n * n];
+            double[] C = new double[n * n];
+
+            // initialise
+            IntStream.range(0, n).parallel().forEach(i -> {
+                for (int j = 0; j < n; j++) A[i*n + j] = B[i*n + j] = i + j;
+            });
+
+            int threads = Math.min(Runtime.getRuntime().availableProcessors(), 6);
+            ForkJoinPool pool = new ForkJoinPool(threads);
+
+            pool.submit(() -> IntStream.range(0, (n + L2 - 1) / L2).parallel().forEach(i2Block -> {
+                int i2 = i2Block * L2;
+                for (int j2 = 0; j2 < n; j2 += L2)
+                    for (int k2 = 0; k2 < n; k2 += L2)
+                        for (int i1 = i2; i1 < i2 + L2 && i1 < n; i1 += L1)
+                            for (int k1 = k2; k1 < k2 + L2 && k1 < n; k1 += L1)
+                                for (int j1 = j2; j1 < j2 + L2 && j1 < n; j1 += L1)
+                                    mulBlock(A, B, C, n, i1, j1, k1);
+            })).join();
+            pool.shutdown();
+
+            System.out.printf("%.0f%n", C[n*n - 1]);
+        }
+
+        private static void mulBlock(double[] A, double[] B, double[] C,
+                                     int n, int i0, int j0, int k0) {
+
+            for (int i = i0; i < i0 + L1 && i < n; i++)
+                for (int k = k0; k < k0 + L1 && k < n; k++) {
+                    double aik = A[i*n + k];
+                    int jEnd = Math.min(j0 + L1, n);
+                    for (int j = j0; j < jEnd; j++)
+                        C[i*n + j] += aik * B[k*n + j];
+                }
+        }
+    }
+dependencies:
+    - name: graalvm-ce
+---
+args: [200]
+expected_stdout: |
+    18487100

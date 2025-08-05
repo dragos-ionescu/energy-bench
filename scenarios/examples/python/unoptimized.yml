@@ -1,0 +1,49 @@
+implementation: python
+name: matrix-multiplication
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    import sys
+
+    def main():
+        if len(sys.argv) != 2:
+            print(f"Usage: {sys.argv[0]} <n>")
+            sys.exit(1)
+
+        n = int(sys.argv[1])
+
+        # Initialize flat lists
+        A = [0.0] * (n * n)
+        B = [0.0] * (n * n)
+        C = [0.0] * (n * n)
+
+        # Populate A and B
+        for i in range(n):
+            for j in range(n):
+                A[i*n + j] = i + j
+                B[i*n + j] = i + j
+
+        # Multiply
+        for i in range(n):
+            for j in range(n):
+                s = 0.0
+                for k in range(n):
+                    s += A[i*n + k] * B[k*n + j]
+                C[i*n + j] = s
+
+        # Print last element
+        print(int(C[n*n - 1]))
+
+    if __name__ == '__main__':
+        main()
+dependencies:
+    - name: python313
+      version: 3.13.3
+roptions:
+    - -OO
+---
+args: [200]
+expected_stdout: |
+    18487100

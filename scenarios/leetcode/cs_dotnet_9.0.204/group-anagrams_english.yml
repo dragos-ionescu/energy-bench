@@ -1,0 +1,130 @@
+implementation: cs
+name: group-anagrams
+description: | # https://leetcode.com/problems/group-anagrams/description/
+    Given an array of strings `strs`, group the anagrams together.
+    You can return the answer in any order.
+
+    Example:
+    Input: strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+    Output: [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+
+    Explanation:
+    - There is no string in strs that can be rearranged to form "bat".
+    - The strings "nat" and "tan" are anagrams as they can be rearranged to form each other.
+    - The strings "ate", "eat", and "tea" are anagrams as they can be rearranged to form each other.
+
+    Constraints:
+    - 1 <= strs.length <= 10⁴
+    - 0 <= strs[i].length <= 100
+    - strs[i] consists of lowercase English letters.
+code: | # https://leetcode.com/problems/group-anagrams/solutions/2884408/o-nk-time-o-n-space
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+
+    public class Solution {
+        public IList<IList<string>> GroupAnagrams(string[] strs) {
+            if (strs.Length == 0) {
+                return new List<IList<string>>();
+            }
+
+            Dictionary<string, List<string>> anagrams = new Dictionary<string, List<string>>();
+
+            foreach (string str in strs) {
+                string sortedStr = CountSort(str);
+                if (!anagrams.ContainsKey(sortedStr)) {
+                    anagrams.Add(sortedStr, new List<string>());
+                }
+
+                anagrams[sortedStr].Add(str);
+            }
+
+            IList<IList<string>> result = new List<IList<string>>();
+            foreach (KeyValuePair<string, List<string>> kvp in anagrams) {
+                result.Add(kvp.Value);
+            }
+            return result;
+        }
+
+        private string CountSort(string s) {
+            int[] counts = new int[26];
+            foreach (char c in s) {
+                counts[c - 'a'] += 1;
+            }
+
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < counts.Length; i++) {
+                if (counts[i] > 0) {
+                    builder.Append((char)('a' + i), counts[i]);
+                }
+            }
+
+            return builder.ToString();
+        }
+    }
+
+    public class Program {
+        public static void Main(string[] args) {
+            // collect input strings from command-line arguments
+            if (args.Length == 0) {
+                Console.WriteLine("[]");
+                return;
+            }
+
+            Solution sol = new Solution();
+            IList<IList<string>> res = sol.GroupAnagrams(args);
+
+            if (res.Count == 0) {
+                Console.WriteLine("[]");
+            } else {
+                var sb = new StringBuilder();
+                sb.Append("[");
+                for (int i = 0; i < res.Count; i++) {
+                    if (i > 0) sb.Append(", ");
+                    sb.Append("[");
+                    var group = res[i];
+                    for (int j = 0; j < group.Count; j++) {
+                        if (j > 0) sb.Append(", ");
+                        sb.Append("\"").Append(group[j]).Append("\"");
+                    }
+                    sb.Append("]");
+                }
+                sb.Append("]");
+                Console.WriteLine(sb.ToString());
+            }
+        }
+    }
+dependencies:
+    - name: dotnet-sdk_9
+      version: 9.0.203
+target_framework: net9.0
+options:
+    - -c Release
+    - -p:OutputType=Exe
+    - -p:ImplicitUsings=enable
+    - -p:Nullable=enable
+    - -p:AllowUnsafeBlocks=true
+    - -p:ServerGarbageCollection=true
+    - -p:ConcurrentGarbageCollection=true
+    - -p:OptimizationPreference=Speed
+    - -p:IlcInstructionSet=native
+---
+args: ["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
+expected_stdout: |
+    [["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]]
+---
+args: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"]
+expected_stdout: |
+    [["a"], ["b"], ["c"], ["d"], ["e"], ["f"], ["g"], ["h"], ["i"], ["j"], ["k"], ["l"], ["m"], ["n"], ["o"], ["p"], ["q"], ["r"], ["s"], ["t"]]
+---
+args: ["ytclsllouu", "hhjm", "vvpzifp", "hdswrgllp", "qbloyuljd", "vwxocb", "mtsrj"]
+expected_stdout: |
+    [["ytclsllouu"], ["hhjm"], ["vvpzifp"], ["hdswrgllp"], ["qbloyuljd"], ["vwxocb"], ["mtsrj"]]
+---
+args: ["idgs", "cmkopf", "tvhtnbgwi", "zvri"]
+expected_stdout: |
+    [["idgs"], ["cmkopf"], ["tvhtnbgwi"], ["zvri"]]
+---
+args: ["epdwfetvw", "s"]
+expected_stdout: |
+    [["epdwfetvw"], ["s"]]

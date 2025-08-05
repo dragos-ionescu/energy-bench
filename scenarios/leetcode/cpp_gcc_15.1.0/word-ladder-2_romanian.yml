@@ -1,0 +1,156 @@
+implementation: cpp
+name: scară-de-cuvinte-2
+description: | # https://leetcode.com/problems/word-ladder-ii/description/
+    O secvență de transformare de la cuvântul beginWord la cuvântul endWord folosind un dicționar wordList este o secvență de cuvinte beginWord -> s1 -> s2 -> ... -> sk astfel încât:
+    - Fiecare pereche de cuvinte adiacente diferă printr-o singură literă.
+    - Fiecare si pentru 1 <= i <= k se află în wordList. Observă că beginWord nu trebuie să fie în wordList.
+    - sk == endWord
+    Dând două cuvinte, beginWord și endWord, și un dicționar wordList, returnează toate cele mai scurte secvențe de transformare de la beginWord la endWord sau o listă goală dacă nu există nicio astfel de secvență. Fiecare secvență trebuie returnată ca o listă de cuvinte [beginWord, s1, s2, ..., sk].
+
+    Exemplu:
+    Input: beginWord = "hit", endWord = "cog", wordList = ["hot", "dot", "dog", "lot", "log", "cog"]
+    Output: [["hit", "hot", "dot", "dog", "cog"], ["hit", "hot", "lot", "log", "cog"]]
+    Explicație: Există 2 secvențe de transformare cele mai scurte:
+    "hit" -> "hot" -> "dot" -> "dog" -> "cog"
+    "hit" -> "hot" -> "lot" -> "log" -> "cog"
+
+    Constrângeri:
+    - 1 <= beginWord.length <= 5
+    - endWord.length == beginWord.length
+    - 1 <= wordList.length <= 500
+    - wordList[i].length == beginWord.length
+    - beginWord, endWord și wordList[i] conțin doar litere mici ale alfabetului englez.
+    - beginWord != endWord
+    - Toate cuvintele din wordList sunt unice.
+    - Suma tuturor secvențelor de transformare cele mai scurte nu depășește 10⁵.
+code: | # https://leetcode.com/problems/word-ladder-ii/solutions/40434/c-solution-using-standard-bfs-method-no-dfs-or-backtracking
+    #include <bits/stdc++.h>
+    using namespace std;
+    // BFS gives TLE if we store path while traversing because whenever we find a better visit time for a word, we have to clear/make a new path vector everytime.
+    // The idea is to first use BFS to search from beginWord to endWord and generate the word-to-children mapping at the same time.
+    // Then, use DFS (backtracking) to generate the transformation sequences according to the mapping.
+    // The reverse DFS allows us to only make the shortest paths, never having to clear a whole sequence when we encounter better result in BFS
+    // No string operations are done, by dealing with indices instead.
+    class Solution {
+    public:
+        bool able(string s,string t){
+            int c=0;
+            for(int i=0;i<s.length();i++)
+                c+=(s[i]!=t[i]);
+            return c==1;
+        }
+        void bfs(vector<vector<int>> &g,vector<int> parent[],int n,int start,int end){
+            vector<int> dist(n,1005);
+            queue<int> q;
+            q.push(start);
+            parent[start]={-1};
+            dist[start]=0;
+            while(!q.empty()){
+                int x=q.front();
+                q.pop();
+                for(int u:g[x]){
+                    if(dist[u]>dist[x]+1){
+                        dist[u]=dist[x]+1;
+                        q.push(u);
+                        parent[u].clear();
+                        parent[u].push_back(x);
+                    } else if(dist[u]==dist[x]+1)
+                        parent[u].push_back(x);
+                }
+            }
+        }
+        void shortestPaths(vector<vector<int>> &Paths, vector<int> &path, vector<int> parent[],int node){
+            if(node==-1){
+                Paths.push_back(path);
+                return;
+            }
+            for(auto u:parent[node]){
+                path.push_back(u);
+                shortestPaths(Paths,path,parent,u);
+                path.pop_back();
+            }
+        }
+        vector<vector<string>> findLadders(string beginWord, string endWord, vector<string>& wordList) {
+            int n=wordList.size(),start=-1,end=-1;
+            vector<vector<string>> ANS;
+            for(int i=0;i<n;i++){
+                if(wordList[i]==beginWord)
+                    start=i;
+                if(wordList[i]==endWord)
+                    end=i;
+            }
+            if(end==-1)
+                return ANS;
+            if(start==-1){
+                wordList.emplace(wordList.begin(),beginWord);
+                start=0;
+                end++;
+                n++;
+            }
+            vector<vector<int>> g(n,vector<int>()),Paths;
+            vector<int> parent[n],path;
+            for(int i=0;i<n-1;i++)
+                for(int j=i+1;j<n;j++)
+                    if(able(wordList[i],wordList[j])){
+                        g[i].push_back(j);
+                        g[j].push_back(i);
+                    }
+            bfs(g,parent,n,start,end);
+            shortestPaths(Paths,path,parent,end);
+            for(auto u:Paths){
+                vector<string> now;
+                for(int i=0;i<u.size()-1;i++)
+                    now.push_back(wordList[u[i]]);
+                reverse(now.begin(),now.end());
+                now.push_back(wordList[end]);
+                ANS.push_back(now);
+            }
+            return ANS;
+        }
+    };
+
+    int main(int argc, char* argv[]) {
+        if (argc < 4) {
+            cerr << "Usage: " << argv[0] << " <beginWord> <endWord> <word1> [word2 ...]" << endl;
+            return 1;
+        }
+        string beginWord = argv[1];
+        string endWord = argv[2];
+        vector<string> wordList;
+        for (int i = 3; i < argc; ++i) wordList.push_back(argv[i]);
+
+        Solution sol;
+        vector<vector<string>> ladders = sol.findLadders(beginWord, endWord, wordList);
+        cout << "[";
+        for (size_t i = 0; i < ladders.size(); ++i) {
+            cout << "[";
+            for (size_t j = 0; j < ladders[i].size(); ++j) {
+                cout << '"' << ladders[i][j] << '"';
+                if (j + 1 < ladders[i].size()) cout << ", ";
+            }
+            cout << "]";
+            if (i + 1 < ladders.size()) cout << ", ";
+        }
+        cout << "]" << endl;
+        return 0;
+    }
+dependencies:
+    - name: gcc15
+      version: 15.1.0
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+---
+args: ["hit", "cog", "hot", "dot", "dog", "lot", "log", "cog"]
+expected_stdout: |
+    [["hit", "hot", "dot", "dog", "cog"], ["hit", "hot", "lot", "log", "cog"]]
+---
+args: ["jbykh", "drgdo", "vrpuk", "sveyt", "rwiql", "wrefl", "cugsm", "olngj", "eiuvg", "xctxz", "vhpvg", "zbzrf", "vxnhz", "mkyfa", "gsjgf", "gbrgy", "iapfw", "euxyz", "jrrok", "vjabe", "bbfal", "rcjet", "bbdep", "sfypv", "kgefu", "uunxu", "aearz", "xzqqo", "vkrdm", "wrdla", "atvyp", "ctekr", "xfbqv", "rfcva", "sfzdp", "sveyt", "hdjqq", "nnqjs", "kducw", "cwvae", "npytc", "urmpc", "nbmnx", "kkaut", "kiodu", "aybji", "wrdla", "jjaxt", "szrxt", "erqay", "ogyxm", "qytzu", "zbzrf", "nkazb", "nydld", "tfguv", "wjaml", "nwhsb", "bigcu", "pgjbo", "tecad", "swnjf", "ltkns", "almuh", "rixhx", "smljp", "wpvbc", "mhkey", "wmqpf", "wytbp", "whwim", "wytbp", "blxhu", "ttbyx", "alfop", "fsrgu", "dxthw", "wvqur", "cdfrl", "wkpoj", "rtdst", "ahqpg", "cdfrl", "oicly", "kkffe", "uyyty", "zkzay", "eqiap", "wybxa", "qxiwd", "oirdf", "wrwdf", "ulqih", "byeit", "qxcqr", "ljcvb", "kljtw", "lrgvz", "ifdns", "adfxj", "ixqwl", "awulw", "qjooo", "ubkdv", "ltihr", "ezrnf", "hlint", "esgir", "ksvev", "iwkqa", "qxiwd", "xziay", "umpeq", "bigcu", "sofpl", "sxtoh", "iefub", "qhtvx", "ugwwi", "crtzu", "renmc", "ciesf", "rzvvk", "gsjgf", "oirdf", "kkffe", "jbhuc", "fixrc", "furzj", "kxiev", "mqthp", "juila", "yekes", "zgcyu", "mxepv", "lnnpr", "zecrd", "rwkcy", "kwrdh", "wvqur", "ztuve", "kducw", "cyacx", "zpxxm", "yxogw", "hlint", "rwiql", "aqrix", "weiha", "abdwb", "ffzys", "apmus", "xorlk", "ikcsj", "jwvbw", "pwwmq", "cyacx", "skrqf", "ipgcb", "ltihr", "bbdep", "nronl", "dlzqs", "rwkcy", "hsnnw", "lrgvz", "jlefz", "vwslr", "hdjqq", "qluxo", "nydld", "iqsnm", "owyno", "awulw", "xqixl", "rysaz", "nrzra", "nsnvu", "rzvvk", "knsig", "swbyn", "sodzm", "nomcc", "tqalg", "ojqkw", "isdvn", "aiebt", "elbio", "thrvc", "enqqv", "wptvt", "vfnsc", "agxyw", "sxibt", "klwre", "appqe", "jjaxt", "pitwc", "mkyfa", "uyyty", "kljtw", "rlsrq", "sodzm", "fvytz", "vfnsc", "rbfat", "gbwak", "dskut", "kjvjs", "xqixl", "hkqap", "whwim", "zbyjt", "qktpd", "nronl", "yqxmo", "smtno", "nrzra", "gbwak", "seivo", "ykdue", "esgir", "rwbdi", "wjaml", "rwiql", "kyhqk", "dfgsb", "oqwas", "atvyp", "hpfba", "jlefz", "mmhbp", "mygtn", "uyhve", "kfttp", "wiswo", "ckkdz", "ltkns", "gfsxn", "vhink", "evdji", "vphbo", "lbvog", "zpxxm", "wekzz", "tqalg", "pwcze", "tuqcg", "sxibt", "vkrdm", "ltkns", "yekes", "ykdue", "cmrty", "efwbz", "kiabn", "irwlr", "dfgsb", "dskut", "ofdck", "ubkdv", "fmvxu", "alfop", "ogyxm", "kfttp", "zpxxm", "rasuv", "phjrk", "crtzu", "sveyt", "qsqjn", "ivjpc", "gchje", "renmc", "fjucx", "tecad", "dtrif", "wytbp", "cwvae", "xszfo", "plbaj", "vidlf", "dufsn", "vrqpc", "qjooo", "gqfix", "fsjif", "lnnpr", "wjaml", "veoic", "atftx", "pshyg", "kvrip", "efwbz", "qlspg", "ojefv", "ibkyl", "mxepv", "lcwxo", "xzqqo", "bbfal", "qfzyc", "oidab", "xoqgp", "yyrqo", "frock", "nzvfn", "zuadb", "jkmhh", "wnvdf", "nnqjs", "hkqap", "sxtoh", "nlhou", "arlyy", "zvbot", "mxepv", "ofdck", "ojqkw", "sodzm", "mxepv", "oidab", "zvbot", "zpxxm", "hckng", "zyoxd", "nronl", "jgiyq", "oktpl", "udsxn", "enqqv", "qxiwd", "qsnwq", "wybxa", "hyscd", "ftfgd", "iqsnm", "hrydo", "ekwyd", "knsig", "fzqmz", "vuyjc", "rysaz", "kkffe", "irwlr", "uyyiz", "wybxa", "dwuzc", "bvpwn", "apdeh", "euxyz", "sddrh", "mygtn", "ykdue", "hdjqq", "ltihr", "nareb", "hwemw", "nronl", "odjfb", "wuwac", "veoic", "rixhx", "iwkqa", "arlyy", "swbyn", "zgcyu", "hqdbq", "hcxed", "dkbqy", "crtzu", "fjivf", "cmrty", "jsqud", "rrzdg", "ycbtc", "vkbwz", "cetgk", "zothm", "baqaq", "almuh", "xzqqo", "wybxa", "wvdmh", "zayfw", "ftfgd", "nfekd", "uunxu", "bigcu", "yxxnm", "yekes", "hpfba", "ykrpj", "bbfal", "dkbqy", "zyoxd", "zvbot", "trbfr", "qmgqk", "mygtn", "rrzdg", "mkyfa", "vkbwz", "mkyfa", "xljtj", "sfzdp", "qmejs", "wakqu", "hqdbq", "almuh", "ztuve", "fixrc", "rwbdi", "zothm", "yqxmo", "qfzyc", "hrydo", "arlyy", "fzish", "vbmzm", "rwbdi", "weiha", "fvytz", "qluxo", "owefa", "kkffe", "vfnsc", "nfekd", "urqzb", "lttld", "nareb", "wybxa", "cusbf", "udpdi", "rlsrq", "rsizk", "fhojz", "zsuph", "lttld", "gyxjh", "crtzu", "nkazb", "vyrlr", "uyhve", "wjaml", "jwvbw", "qjpet", "flipx", "ykrpj", "ycgtn", "iilmu", "qhtvx", "gixev", "nciyb", "ckkdz", "wnvdf", "nkazb", "hwsef", "vqfox", "mbhme", "pwcze", "rsizk", "gabqm", "nfekd", "dskut", "fghzj", "ikcsj", "mqbhr", "byeit", "tmtqp", "ixqwl", "vhink", "rzroo", "oktpl", "xctxz", "jeogv", "jsqud", "ogyxm", "sfzdp", "uyyiz", "nrzra", "wptvt", "xqixl", "bndsl", "ycyto", "alfop", "mqthp", "abdwb", "almuh", "wzxux", "pdcoq"]
+expected_stdout: |
+    []
+---
+args: ["e", "z", "g", "r", "c", "l", "n", "g", "b", "c", "h", "m", "r", "f", "s", "r", "k", "n", "p", "n", "e", "m", "y", "o", "a", "w", "r", "j", "y", "o", "c", "i", "x", "w", "h", "k", "o", "z", "o", "t", "e", "u", "k", "o", "e", "l", "n", "e", "y", "s", "c", "h", "q", "v", "c", "r", "r", "v", "r", "n", "g", "l", "y", "p", "a", "u", "e", "i", "v", "z", "a", "t", "e", "l", "z", "a", "h", "a", "x", "n", "s", "s", "k", "r", "k", "e", "y", "t", "r", "g", "s", "u", "h", "s", "v", "e", "n", "o", "o", "k", "m", "i", "l", "c", "s", "w", "q", "h", "b", "v", "s", "g", "r", "m", "c", "d", "p", "m", "x", "j", "s", "j", "v", "x", "q", "c", "d", "j", "g", "w", "v", "i", "u", "m", "y", "l", "j", "e", "u", "q", "u", "a", "i", "b", "t", "c", "c", "w", "t", "d", "i", "o", "b", "i", "f", "v", "a", "v", "h", "w", "j", "k", "u", "n", "u", "c", "d", "v", "c", "k", "u", "a", "m", "e", "i", "l", "m", "a", "j", "c", "s", "c", "r", "y", "r", "t", "z", "a", "r", "u", "n", "m", "s", "r", "z", "d", "m", "z", "j", "v", "t", "j", "a", "x", "g", "r", "v", "y", "v", "c", "k", "s", "p", "n", "w", "x", "r", "o", "t", "m", "g", "g", "h", "z", "m", "c", "c", "u", "w", "v", "m", "t", "j", "d", "m", "j", "k", "t", "c", "j", "e", "e", "l", "b", "j", "o", "o", "l", "s", "b", "k", "w", "e", "l", "w", "m", "l", "i", "r", "f", "m", "i", "r", "e", "n", "t", "r", "k", "e", "u", "c", "j", "t", "a", "h", "q", "c", "u", "b", "d", "l", "k", "n", "x", "x", "y", "f", "o", "t", "o", "s", "l", "k", "h", "r", "z", "z", "l", "z", "d", "n", "h", "j", "b", "c", "a", "a", "f", "m", "g", "a", "r", "y", "y", "m", "o", "y", "h", "a", "r", "t", "f", "y", "c", "r", "i", "x", "m", "h", "s", "i", "j", "s", "w", "n", "k", "e", "c", "i", "h", "w", "o", "x", "k", "a", "j", "f", "r", "d", "x", "p", "h", "r", "k", "m", "g", "b", "v", "e", "k", "r", "c", "f", "s", "t", "a", "f", "g", "s", "a", "y", "r", "a", "h", "e", "d", "c", "c", "u", "c", "e", "a", "u", "u", "o", "k", "v", "w", "s", "r", "i", "c", "g", "t", "o", "f", "g", "g", "k", "v", "s", "z", "i", "b", "f", "a", "z", "i", "c", "y", "b", "i", "q", "e", "b", "x", "n", "e", "h", "g", "p", "y", "j", "f", "r", "h", "z", "o", "x", "j", "s", "s", "m", "y", "e", "g", "q", "a", "a", "c", "q", "q", "r", "y", "v", "e", "a", "d", "s", "s", "c", "o", "r", "c", "r", "i", "z", "n", "y", "c"]
+expected_stdout: |
+    [["e", "z"]]

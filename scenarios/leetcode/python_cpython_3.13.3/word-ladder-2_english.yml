@@ -1,0 +1,122 @@
+implementation: python
+name: word-ladder-2
+description: | # https://leetcode.com/problems/word-ladder-ii/description/
+    A transformation sequence from word beginWord to word endWord using a dictionary wordList is a sequence of words beginWord -> s1 -> s2 -> ... -> sk such that:
+    - Every adjacent pair of words differs by a single letter.
+    - Every si for 1 <= i <= k is in wordList. Note that beginWord does not need to be in wordList.
+    - sk == endWord
+    Given two words, beginWord and endWord, and a dictionary wordList, return all the shortest transformation sequences from beginWord to endWord, or an empty list if no such sequence exists. Each sequence should be returned as a list of the words [beginWord, s1, s2, ..., sk].
+
+    Example:
+    Input: beginWord = "hit", endWord = "cog", wordList = ["hot", "dot", "dog", "lot", "log", "cog"]
+    Output: [["hit", "hot", "dot", "dog", "cog"], ["hit", "hot", "lot", "log", "cog"]]
+    Explanation: There are 2 shortest transformation sequences:
+    "hit" -> "hot" -> "dot" -> "dog" -> "cog"
+    "hit" -> "hot" -> "lot" -> "log" -> "cog"
+
+    Constraints:
+    - 1 <= beginWord.length <= 5
+    - endWord.length == beginWord.length
+    - 1 <= wordList.length <= 500
+    - wordList[i].length == beginWord.length
+    - beginWord, endWord, and wordList[i] consist of lowercase English letters.
+    - beginWord != endWord
+    - All the words in wordList are unique.
+    - The sum of all shortest transformation sequences does not exceed 10⁵.
+code: | # https://leetcode.com/problems/word-ladder-ii/solutions/2422401/46ms-python-97-faster-working-multiple-solutions-95-memory-efficient-solution
+    import sys
+    from collections import defaultdict, deque
+    from typing import List
+
+    class Solution:
+        def findLadders(self, beginWord: str, endWord: str, wordList: List[str]) -> List[List[str]]:
+            d = defaultdict(list)
+            for word in wordList:
+                for i in range(len(word)):
+                    d[word[:i] + "*" + word[i+1:]].append(word)
+
+            if endWord not in wordList:
+                return []
+
+            visited1 = defaultdict(list)
+            q1 = deque([beginWord])
+            visited1[beginWord] = []
+
+            visited2 = defaultdict(list)
+            q2 = deque([endWord])
+            visited2[endWord] = []
+
+            ans = []
+
+            def dfs(v, visited, path, paths):
+                path.append(v)
+                if not visited[v]:
+                    if visited is visited1:
+                        paths.append(path[::-1])
+                    else:
+                        paths.append(path[:])
+                for u in visited[v]:
+                    dfs(u, visited, path, paths)
+                path.pop()
+
+            def bfs(q, visited1_map, visited2_map, frombegin):
+                level_visited = defaultdict(list)
+                for _ in range(len(q)):
+                    u = q.popleft()
+                    for i in range(len(u)):
+                        for v in d[u[:i] + "*" + u[i+1:]]:
+                            if v in visited2_map:
+                                paths1 = []
+                                paths2 = []
+                                dfs(u, visited1_map, [], paths1)
+                                dfs(v, visited2_map, [], paths2)
+                                if not frombegin:
+                                    paths1, paths2 = paths2, paths1
+                                for a in paths1:
+                                    for b in paths2:
+                                        ans.append(a + b)
+                            elif v not in visited1_map:
+                                if v not in level_visited:
+                                    q.append(v)
+                                level_visited[v].append(u)
+                visited1_map.update(level_visited)
+
+            while q1 and q2 and not ans:
+                if len(q1) <= len(q2):
+                    bfs(q1, visited1, visited2, True)
+                else:
+                    bfs(q2, visited2, visited1, False)
+
+            return ans
+
+    if __name__ == "__main__":
+        if len(sys.argv) < 4:
+            print("Usage: python Program.py <beginWord> <endWord> <word1> [word2 ...]")
+            sys.exit(1)
+
+        beginWord = sys.argv[1]
+        endWord = sys.argv[2]
+        wordList = list(dict.fromkeys(sys.argv[3:]))
+
+        sol = Solution()
+        ladders = sol.findLadders(beginWord, endWord, wordList)
+
+        if not ladders:
+            print([])
+        else:
+            print(ladders)
+dependencies:
+    - name: python313
+      version: 3.13.3
+---
+args: ["hit", "cog", "hot", "dot", "dog", "lot", "log", "cog"]
+expected_stdout: |
+    [['hit', 'hot', 'dot', 'dog', 'cog'], ['hit', 'hot', 'lot', 'log', 'cog']]
+---
+args: ["jbykh", "drgdo", "vrpuk", "sveyt", "rwiql", "wrefl", "cugsm", "olngj", "eiuvg", "xctxz", "vhpvg", "zbzrf", "vxnhz", "mkyfa", "gsjgf", "gbrgy", "iapfw", "euxyz", "jrrok", "vjabe", "bbfal", "rcjet", "bbdep", "sfypv", "kgefu", "uunxu", "aearz", "xzqqo", "vkrdm", "wrdla", "atvyp", "ctekr", "xfbqv", "rfcva", "sfzdp", "sveyt", "hdjqq", "nnqjs", "kducw", "cwvae", "npytc", "urmpc", "nbmnx", "kkaut", "kiodu", "aybji", "wrdla", "jjaxt", "szrxt", "erqay", "ogyxm", "qytzu", "zbzrf", "nkazb", "nydld", "tfguv", "wjaml", "nwhsb", "bigcu", "pgjbo", "tecad", "swnjf", "ltkns", "almuh", "rixhx", "smljp", "wpvbc", "mhkey", "wmqpf", "wytbp", "whwim", "wytbp", "blxhu", "ttbyx", "alfop", "fsrgu", "dxthw", "wvqur", "cdfrl", "wkpoj", "rtdst", "ahqpg", "cdfrl", "oicly", "kkffe", "uyyty", "zkzay", "eqiap", "wybxa", "qxiwd", "oirdf", "wrwdf", "ulqih", "byeit", "qxcqr", "ljcvb", "kljtw", "lrgvz", "ifdns", "adfxj", "ixqwl", "awulw", "qjooo", "ubkdv", "ltihr", "ezrnf", "hlint", "esgir", "ksvev", "iwkqa", "qxiwd", "xziay", "umpeq", "bigcu", "sofpl", "sxtoh", "iefub", "qhtvx", "ugwwi", "crtzu", "renmc", "ciesf", "rzvvk", "gsjgf", "oirdf", "kkffe", "jbhuc", "fixrc", "furzj", "kxiev", "mqthp", "juila", "yekes", "zgcyu", "mxepv", "lnnpr", "zecrd", "rwkcy", "kwrdh", "wvqur", "ztuve", "kducw", "cyacx", "zpxxm", "yxogw", "hlint", "rwiql", "aqrix", "weiha", "abdwb", "ffzys", "apmus", "xorlk", "ikcsj", "jwvbw", "pwwmq", "cyacx", "skrqf", "ipgcb", "ltihr", "bbdep", "nronl", "dlzqs", "rwkcy", "hsnnw", "lrgvz", "jlefz", "vwslr", "hdjqq", "qluxo", "nydld", "iqsnm", "owyno", "awulw", "xqixl", "rysaz", "nrzra", "nsnvu", "rzvvk", "knsig", "swbyn", "sodzm", "nomcc", "tqalg", "ojqkw", "isdvn", "aiebt", "elbio", "thrvc", "enqqv", "wptvt", "vfnsc", "agxyw", "sxibt", "klwre", "appqe", "jjaxt", "pitwc", "mkyfa", "uyyty", "kljtw", "rlsrq", "sodzm", "fvytz", "vfnsc", "rbfat", "gbwak", "dskut", "kjvjs", "xqixl", "hkqap", "whwim", "zbyjt", "qktpd", "nronl", "yqxmo", "smtno", "nrzra", "gbwak", "seivo", "ykdue", "esgir", "rwbdi", "wjaml", "rwiql", "kyhqk", "dfgsb", "oqwas", "atvyp", "hpfba", "jlefz", "mmhbp", "mygtn", "uyhve", "kfttp", "wiswo", "ckkdz", "ltkns", "gfsxn", "vhink", "evdji", "vphbo", "lbvog", "zpxxm", "wekzz", "tqalg", "pwcze", "tuqcg", "sxibt", "vkrdm", "ltkns", "yekes", "ykdue", "cmrty", "efwbz", "kiabn", "irwlr", "dfgsb", "dskut", "ofdck", "ubkdv", "fmvxu", "alfop", "ogyxm", "kfttp", "zpxxm", "rasuv", "phjrk", "crtzu", "sveyt", "qsqjn", "ivjpc", "gchje", "renmc", "fjucx", "tecad", "dtrif", "wytbp", "cwvae", "xszfo", "plbaj", "vidlf", "dufsn", "vrqpc", "qjooo", "gqfix", "fsjif", "lnnpr", "wjaml", "veoic", "atftx", "pshyg", "kvrip", "efwbz", "qlspg", "ojefv", "ibkyl", "mxepv", "lcwxo", "xzqqo", "bbfal", "qfzyc", "oidab", "xoqgp", "yyrqo", "frock", "nzvfn", "zuadb", "jkmhh", "wnvdf", "nnqjs", "hkqap", "sxtoh", "nlhou", "arlyy", "zvbot", "mxepv", "ofdck", "ojqkw", "sodzm", "mxepv", "oidab", "zvbot", "zpxxm", "hckng", "zyoxd", "nronl", "jgiyq", "oktpl", "udsxn", "enqqv", "qxiwd", "qsnwq", "wybxa", "hyscd", "ftfgd", "iqsnm", "hrydo", "ekwyd", "knsig", "fzqmz", "vuyjc", "rysaz", "kkffe", "irwlr", "uyyiz", "wybxa", "dwuzc", "bvpwn", "apdeh", "euxyz", "sddrh", "mygtn", "ykdue", "hdjqq", "ltihr", "nareb", "hwemw", "nronl", "odjfb", "wuwac", "veoic", "rixhx", "iwkqa", "arlyy", "swbyn", "zgcyu", "hqdbq", "hcxed", "dkbqy", "crtzu", "fjivf", "cmrty", "jsqud", "rrzdg", "ycbtc", "vkbwz", "cetgk", "zothm", "baqaq", "almuh", "xzqqo", "wybxa", "wvdmh", "zayfw", "ftfgd", "nfekd", "uunxu", "bigcu", "yxxnm", "yekes", "hpfba", "ykrpj", "bbfal", "dkbqy", "zyoxd", "zvbot", "trbfr", "qmgqk", "mygtn", "rrzdg", "mkyfa", "vkbwz", "mkyfa", "xljtj", "sfzdp", "qmejs", "wakqu", "hqdbq", "almuh", "ztuve", "fixrc", "rwbdi", "zothm", "yqxmo", "qfzyc", "hrydo", "arlyy", "fzish", "vbmzm", "rwbdi", "weiha", "fvytz", "qluxo", "owefa", "kkffe", "vfnsc", "nfekd", "urqzb", "lttld", "nareb", "wybxa", "cusbf", "udpdi", "rlsrq", "rsizk", "fhojz", "zsuph", "lttld", "gyxjh", "crtzu", "nkazb", "vyrlr", "uyhve", "wjaml", "jwvbw", "qjpet", "flipx", "ykrpj", "ycgtn", "iilmu", "qhtvx", "gixev", "nciyb", "ckkdz", "wnvdf", "nkazb", "hwsef", "vqfox", "mbhme", "pwcze", "rsizk", "gabqm", "nfekd", "dskut", "fghzj", "ikcsj", "mqbhr", "byeit", "tmtqp", "ixqwl", "vhink", "rzroo", "oktpl", "xctxz", "jeogv", "jsqud", "ogyxm", "sfzdp", "uyyiz", "nrzra", "wptvt", "xqixl", "bndsl", "ycyto", "alfop", "mqthp", "abdwb", "almuh", "wzxux", "pdcoq"]
+expected_stdout: |
+    []
+---
+args: ["e", "z", "g", "r", "c", "l", "n", "g", "b", "c", "h", "m", "r", "f", "s", "r", "k", "n", "p", "n", "e", "m", "y", "o", "a", "w", "r", "j", "y", "o", "c", "i", "x", "w", "h", "k", "o", "z", "o", "t", "e", "u", "k", "o", "e", "l", "n", "e", "y", "s", "c", "h", "q", "v", "c", "r", "r", "v", "r", "n", "g", "l", "y", "p", "a", "u", "e", "i", "v", "z", "a", "t", "e", "l", "z", "a", "h", "a", "x", "n", "s", "s", "k", "r", "k", "e", "y", "t", "r", "g", "s", "u", "h", "s", "v", "e", "n", "o", "o", "k", "m", "i", "l", "c", "s", "w", "q", "h", "b", "v", "s", "g", "r", "m", "c", "d", "p", "m", "x", "j", "s", "j", "v", "x", "q", "c", "d", "j", "g", "w", "v", "i", "u", "m", "y", "l", "j", "e", "u", "q", "u", "a", "i", "b", "t", "c", "c", "w", "t", "d", "i", "o", "b", "i", "f", "v", "a", "v", "h", "w", "j", "k", "u", "n", "u", "c", "d", "v", "c", "k", "u", "a", "m", "e", "i", "l", "m", "a", "j", "c", "s", "c", "r", "y", "r", "t", "z", "a", "r", "u", "n", "m", "s", "r", "z", "d", "m", "z", "j", "v", "t", "j", "a", "x", "g", "r", "v", "y", "v", "c", "k", "s", "p", "n", "w", "x", "r", "o", "t", "m", "g", "g", "h", "z", "m", "c", "c", "u", "w", "v", "m", "t", "j", "d", "m", "j", "k", "t", "c", "j", "e", "e", "l", "b", "j", "o", "o", "l", "s", "b", "k", "w", "e", "l", "w", "m", "l", "i", "r", "f", "m", "i", "r", "e", "n", "t", "r", "k", "e", "u", "c", "j", "t", "a", "h", "q", "c", "u", "b", "d", "l", "k", "n", "x", "x", "y", "f", "o", "t", "o", "s", "l", "k", "h", "r", "z", "z", "l", "z", "d", "n", "h", "j", "b", "c", "a", "a", "f", "m", "g", "a", "r", "y", "y", "m", "o", "y", "h", "a", "r", "t", "f", "y", "c", "r", "i", "x", "m", "h", "s", "i", "j", "s", "w", "n", "k", "e", "c", "i", "h", "w", "o", "x", "k", "a", "j", "f", "r", "d", "x", "p", "h", "r", "k", "m", "g", "b", "v", "e", "k", "r", "c", "f", "s", "t", "a", "f", "g", "s", "a", "y", "r", "a", "h", "e", "d", "c", "c", "u", "c", "e", "a", "u", "u", "o", "k", "v", "w", "s", "r", "i", "c", "g", "t", "o", "f", "g", "g", "k", "v", "s", "z", "i", "b", "f", "a", "z", "i", "c", "y", "b", "i", "q", "e", "b", "x", "n", "e", "h", "g", "p", "y", "j", "f", "r", "h", "z", "o", "x", "j", "s", "s", "m", "y", "e", "g", "q", "a", "a", "c", "q", "q", "r", "y", "v", "e", "a", "d", "s", "s", "c", "o", "r", "c", "r", "i", "z", "n", "y", "c"]
+expected_stdout: |
+    [['e', 'z']]

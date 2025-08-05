@@ -1,0 +1,66 @@
+implementation: ruby
+name: gruppér-anagrammer
+description: | # https://leetcode.com/problems/group-anagrams/description/
+    Givet et array af strenge `strs`, gruppér anagrammerne sammen.
+    Du kan returnere svaret i vilkårlig rækkefølge.
+
+    Eksempel:
+    Input: strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+    Output: ["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+
+    Forklaring:
+    - Der er ingen streng i strs, der kan omarrangeres til at danne "bat".
+    - Strengene "nat" og "tan" er anagrammer, da de kan omarrangeres til hinanden.
+    - Strengene "ate", "eat" og "tea" er anagrammer, da de kan omarrangeres til hinanden.
+
+    Begrænsninger:
+    - 1 <= strs.length <= 10⁴
+    - 0 <= strs[i].length <= 100
+    - strs[i] består af små bogstaver i det engelske alfabet.
+code: | # https://leetcode.com/problems/group-anagrams/solutions/6223523/hash-maps-sorting-anagram-magic-perfect-for-beginners
+    require 'json'
+
+    def group_anagrams(strs)
+        anagrams = Hash.new { |hash, key| hash[key] = [] }
+
+        strs.each do |str|
+            key = str.chars.sort.join
+            anagrams[key] << str
+        end
+
+        anagrams.values
+    end
+
+    if __FILE__ == $0
+        if ARGV.empty?
+            puts '[]'
+            exit
+        end
+        result = group_anagrams(ARGV)
+        puts JSON.generate(result)
+    end
+dependencies:
+    - name: ruby_3_4
+      version: 3.4.3
+roptions:
+    - -W0
+---
+args: ["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
+expected_stdout: |
+    [["x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x"]]
+---
+args: ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t"]
+expected_stdout: |
+    [["a"],["b"],["c"],["d"],["e"],["f"],["g"],["h"],["i"],["j"],["k"],["l"],["m"],["n"],["o"],["p"],["q"],["r"],["s"],["t"]]
+---
+args: ["ytclsllouu", "hhjm", "vvpzifp", "hdswrgllp", "qbloyuljd", "vwxocb", "mtsrj"]
+expected_stdout: |
+    [["ytclsllouu"],["hhjm"],["vvpzifp"],["hdswrgllp"],["qbloyuljd"],["vwxocb"],["mtsrj"]]
+---
+args: ["idgs", "cmkopf", "tvhtnbgwi", "zvri"]
+expected_stdout: |
+    [["idgs"],["cmkopf"],["tvhtnbgwi"],["zvri"]]
+---
+args: ["epdwfetvw", "s"]
+expected_stdout: |
+    [["epdwfetvw"],["s"]]

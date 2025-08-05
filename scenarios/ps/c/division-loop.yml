@@ -1,0 +1,40 @@
+implementation: c
+name: division-loop
+description: |
+    Consider for a given M the problem of finding the least integer n such that 1/1 + 1/2 + 1/3 + ... + 1/n >= M.
+    For M = 20 the answer is n = 272400600 and the loop performs that many iterations.
+    Each iteration involves a floating-point comparison, a floating-point division and a floating-point addition, as well as an integer increment.
+code: |
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <energy_signal.h>
+
+    void run(int m) {
+       double sum = 0.0;
+       int n = 0;
+       while (sum < m) {
+           n++;
+           sum += 1.0 / n;
+       }
+       printf("%d\n", n);
+    }
+    int main(int argc, char *argv[]) {
+       int m = atoi(argv[1]);
+       while (start_signal()) {
+           run(m);
+           stop_signal();
+       }
+       return 0;
+    }
+dependencies:
+    - gcc14 # 14.2.0
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+    - -lpthread
+---
+args: [20]
+expected_stdout: |
+    272400600

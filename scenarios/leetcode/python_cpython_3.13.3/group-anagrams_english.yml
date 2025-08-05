@@ -1,0 +1,70 @@
+implementation: python
+name: group-anagrams
+description: | # https://leetcode.com/problems/group-anagrams/description/
+    Given an array of strings `strs`, group the anagrams together.
+    You can return the answer in any order.
+
+    Example:
+    Input: strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+    Output: [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+
+    Explanation:
+    - There is no string in strs that can be rearranged to form "bat".
+    - The strings "nat" and "tan" are anagrams as they can be rearranged to form each other.
+    - The strings "ate", "eat", and "tea" are anagrams as they can be rearranged to form each other.
+
+    Constraints:
+    - 1 <= strs.length <= 10⁴
+    - 0 <= strs[i].length <= 100
+    - strs[i] consists of lowercase English letters.
+code: | # https://leetcode.com/problems/group-anagrams/solutions/2384037/python-easily-understood-hash-table-fast-simple
+    import sys
+    import json
+    from typing import List
+
+    class Solution:
+        def groupAnagrams(self, strs: List[str]) -> List[List[str]]:
+            strs_table = {}
+
+            for string in strs:
+                sorted_string = ''.join(sorted(string))
+
+                if sorted_string not in strs_table:
+                    strs_table[sorted_string] = []
+
+                strs_table[sorted_string].append(string)
+
+            return list(strs_table.values())
+
+    if __name__ == "__main__":
+        if len(sys.argv) < 2:
+            sys.exit(1)
+        inputs = sys.argv[1:]
+        sol = Solution()
+        result = sol.groupAnagrams(inputs)
+        print(json.dumps(result))
+dependencies:
+    - name: python313
+      version: 3.13.3
+roptions:
+    - -OO
+---
+args: ["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
+expected_stdout: |
+    [["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]]
+---
+args: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"]
+expected_stdout: |
+    [["a"], ["b"], ["c"], ["d"], ["e"], ["f"], ["g"], ["h"], ["i"], ["j"], ["k"], ["l"], ["m"], ["n"], ["o"], ["p"], ["q"], ["r"], ["s"], ["t"]]
+---
+args: ["ytclsllouu", "hhjm", "vvpzifp", "hdswrgllp", "qbloyuljd", "vwxocb", "mtsrj"]
+expected_stdout: |
+    [["ytclsllouu"], ["hhjm"], ["vvpzifp"], ["hdswrgllp"], ["qbloyuljd"], ["vwxocb"], ["mtsrj"]]
+---
+args: ["idgs", "cmkopf", "tvhtnbgwi", "zvri"]
+expected_stdout: |
+    [["idgs"], ["cmkopf"], ["tvhtnbgwi"], ["zvri"]]
+---
+args: ["epdwfetvw", "s"]
+expected_stdout: |
+    [["epdwfetvw"], ["s"]]

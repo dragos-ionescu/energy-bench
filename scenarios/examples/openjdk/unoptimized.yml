@@ -1,0 +1,43 @@
+implementation: openjdk
+name: matrix-multiplication
+description: |
+    Track consecutive non-negative numbers, resetting count on negatives. The program should:
+    - Process each number in sequence
+    - Increment count for non-negative numbers
+    - Reset count to zero on negatives
+    - Print current count after each step
+    Use command line arguments to provide numbers to process.
+code: |
+    public class Program {
+        public static void main(String[] args) {
+            int n = Integer.parseInt(args[0]);
+
+            double[] A = new double[n * n];
+            double[] B = new double[n * n];
+            double[] C = new double[n * n];
+
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    A[i*n + j] = B[i*n + j] = i + j;
+                }
+            }
+
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    double sum = 0.0;
+                    for (int k = 0; k < n; k++) {
+                        sum += A[i*n + k] * B[k*n + j];
+                    }
+                    C[i*n + j] = sum;
+                }
+            }
+
+            System.out.printf("%.0f\n", C[n*n - 1]);
+        }
+    }
+dependencies:
+    - name: jdk
+---
+args: [200]
+expected_stdout: |
+    18487100

@@ -1,0 +1,91 @@
+implementation: rust
+name: gruppér-anagrammer
+description: | # https://leetcode.com/problems/group-anagrams/description/
+    Givet et array af strenge `strs`, gruppér anagrammerne sammen.
+    Du kan returnere svaret i vilkårlig rækkefølge.
+
+    Eksempel:
+    Input: strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+    Output: ["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+
+    Forklaring:
+    - Der er ingen streng i strs, der kan omarrangeres til at danne "bat".
+    - Strengene "nat" og "tan" er anagrammer, da de kan omarrangeres til hinanden.
+    - Strengene "ate", "eat" og "tea" er anagrammer, da de kan omarrangeres til hinanden.
+
+    Begrænsninger:
+    - 1 <= strs.length <= 10⁴
+    - 0 <= strs[i].length <= 100
+    - strs[i] består af små bogstaver i det engelske alfabet.
+code: | # https://leetcode.com/problems/group-anagrams/solutions/6223523/hash-maps-sorting-anagram-magic-perfect-for-beginners
+    use std::collections::HashMap;
+    use std::env;
+
+    struct Solution;
+
+    impl Solution {
+        pub fn group_anagrams(strs: Vec<String>) -> Vec<Vec<String>> {
+            const N_LETTERS: usize = (b'z' - b'a' + 1) as _;
+            let mut map: HashMap<[u8; N_LETTERS], Vec<String>> = HashMap::new();
+            for s in strs.into_iter() {
+                let mut freqs = [0u8; N_LETTERS];
+                for b in s.bytes() {
+                    freqs[(b - b'a') as usize] += 1;
+                }
+                map.entry(freqs).or_default().push(s);
+            }
+            let mut entries: Vec<([u8; N_LETTERS], Vec<String>)> =
+                map.into_iter().collect();
+            entries.sort_by(|a, b| a.0.cmp(&b.0));
+            entries.into_iter().map(|(_, group)| group).collect()
+        }
+    }
+
+    fn main() {
+        let args: Vec<String> = env::args().skip(1).collect();
+        let res = Solution::group_anagrams(args);
+
+        if res.is_empty() {
+            println!("[]");
+        } else {
+            print!("[");
+            for (i, group) in res.iter().enumerate() {
+                if i > 0 { print!(", "); }
+                print!("[");
+                for (j, s) in group.iter().enumerate() {
+                    if j > 0 { print!(", "); }
+                    print!("\"{}\"", s);
+                }
+                print!("]");
+            }
+            println!("]");
+        }
+    }
+dependencies:
+    - name: cargo
+      version: 1.86.0
+    - name: rustc
+      version: 1.86.0
+options:
+    - --release
+    - --config profile.release.codegen-units=1
+---
+args: ["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
+expected_stdout: |
+    [["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]]
+---
+args: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"]
+expected_stdout: |
+    [["t"], ["s"], ["r"], ["q"], ["p"], ["o"], ["n"], ["m"], ["l"], ["k"], ["j"], ["i"], ["h"], ["g"], ["f"], ["e"], ["d"], ["c"], ["b"], ["a"]]
+---
+args: ["ytclsllouu", "hhjm", "vvpzifp", "hdswrgllp", "qbloyuljd", "vwxocb", "mtsrj"]
+expected_stdout: |
+    [["mtsrj"], ["hhjm"], ["vvpzifp"], ["hdswrgllp"], ["ytclsllouu"], ["qbloyuljd"], ["vwxocb"]]
+---
+args: ["idgs", "cmkopf", "tvhtnbgwi", "zvri"]
+expected_stdout: |
+    [["zvri"], ["idgs"], ["cmkopf"], ["tvhtnbgwi"]]
+---
+args: ["epdwfetvw", "s"]
+expected_stdout: |
+    [["s"], ["epdwfetvw"]]

@@ -1,0 +1,41 @@
+implementation: ruby
+name: matrix-multiplication
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    n = ARGV[0].to_i
+
+    # Allocate flat arrays
+    A = Array.new(n * n)
+    B = Array.new(n * n)
+    C = Array.new(n * n, 0.0)
+
+    (0...n).each do |i|
+      (0...n).each do |j|
+        A[i * n + j] = i + j
+        B[i * n + j] = i + j
+      end
+    end
+
+    (0...n).each do |i|
+      (0...n).each do |j|
+        sum = 0.0
+        (0...n).each do |k|
+          sum += A[i * n + k] * B[k * n + j]
+        end
+        C[i * n + j] = sum
+      end
+    end
+
+    puts C[n * n - 1].to_i
+dependencies:
+    - name: ruby_3_4
+      version: 3.4.3
+roptions:
+    - -W0
+---
+args: [200]
+expected_stdout: |
+    18487100

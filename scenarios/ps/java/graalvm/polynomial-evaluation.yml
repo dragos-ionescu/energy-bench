@@ -1,0 +1,40 @@
+implementation: graalvm
+name: polynomial-evaluation
+description: |
+    This benchmark implements polynomial evaluation using Horner's rule.
+    A polynomial of degree n has the form: c₀ + c₁x + c₂x² + ... + cₙxⁿ
+    Instead of calculating each power of x separately (which would require n(n+1)/2 multiplications),
+    Horner's rule rearranges the calculation to: c₀ + x(c₁ + x(c₂ + ... + x(cₙ₋₁ + xcₙ)...))
+    This requires only n multiplications and n additions, making it much more efficient.
+code: |
+    public class Program {
+        static void run(int degree, double x, double[] coeffs) {
+            double result = 0.0;
+            for (int i = 0; i <= degree; i++) {
+                result = coeffs[i] + x * result;
+            }
+            System.out.printf("%.6f\n", result);
+        }
+        
+        public static void main(String[] args) throws Throwable {
+            EnergySignal signal = new EnergySignal();
+            int degree = Integer.parseInt(args[0]);
+            double x = Double.parseDouble(args[1]);
+            
+            double[] coeffs = new double[degree + 1];
+            for (int i = 0; i <= degree; i++) {
+                coeffs[i] = 1.0 / (i + 1);
+            }
+            
+            while (signal.startSignal() > 0) {
+                run(degree, x, coeffs);
+                signal.stopSignal();
+            }
+        }
+    }
+dependencies:
+    - graalvm-ce # 23.0.0
+---
+args: [1000, 0.5]
+expected_stdout: |
+    1.693147

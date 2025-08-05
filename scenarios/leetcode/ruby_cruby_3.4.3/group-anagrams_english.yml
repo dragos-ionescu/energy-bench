@@ -1,0 +1,66 @@
+implementation: ruby
+name: group-anagrams
+description: | # https://leetcode.com/problems/group-anagrams/description/
+    Given an array of strings `strs`, group the anagrams together.
+    You can return the answer in any order.
+
+    Example:
+    Input: strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+    Output: [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+
+    Explanation:
+    - There is no string in strs that can be rearranged to form "bat".
+    - The strings "nat" and "tan" are anagrams as they can be rearranged to form each other.
+    - The strings "ate", "eat", and "tea" are anagrams as they can be rearranged to form each other.
+
+    Constraints:
+    - 1 <= strs.length <= 10⁴
+    - 0 <= strs[i].length <= 100
+    - strs[i] consists of lowercase English letters.
+code: | # https://leetcode.com/problems/group-anagrams/solutions/6223523/hash-maps-sorting-anagram-magic-perfect-for-beginners
+    require 'json'
+
+    def group_anagrams(strs)
+        anagrams = Hash.new { |hash, key| hash[key] = [] }
+
+        strs.each do |str|
+            key = str.chars.sort.join
+            anagrams[key] << str
+        end
+
+        anagrams.values
+    end
+
+    if __FILE__ == $0
+        if ARGV.empty?
+            puts '[]'
+            exit
+        end
+        result = group_anagrams(ARGV)
+        puts JSON.generate(result)
+    end
+dependencies:
+    - name: ruby_3_4
+      version: 3.4.3
+roptions:
+    - -W0
+---
+args: ["x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x", "x"]
+expected_stdout: |
+    [["x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x","x"]]
+---
+args: ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t"]
+expected_stdout: |
+    [["a"],["b"],["c"],["d"],["e"],["f"],["g"],["h"],["i"],["j"],["k"],["l"],["m"],["n"],["o"],["p"],["q"],["r"],["s"],["t"]]
+---
+args: ["ytclsllouu", "hhjm", "vvpzifp", "hdswrgllp", "qbloyuljd", "vwxocb", "mtsrj"]
+expected_stdout: |
+    [["ytclsllouu"],["hhjm"],["vvpzifp"],["hdswrgllp"],["qbloyuljd"],["vwxocb"],["mtsrj"]]
+---
+args: ["idgs", "cmkopf", "tvhtnbgwi", "zvri"]
+expected_stdout: |
+    [["idgs"],["cmkopf"],["tvhtnbgwi"],["zvri"]]
+---
+args: ["epdwfetvw", "s"]
+expected_stdout: |
+    [["epdwfetvw"],["s"]]

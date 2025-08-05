@@ -1,0 +1,65 @@
+implementation: cs
+name: matrix-multiplication
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    using System.Runtime.InteropServices;
+    
+    public class Program {
+        [DllImport("libenergy_signal", EntryPoint = "start_signal")]
+        public static extern bool start_signal();
+        
+        [DllImport("libenergy_signal", EntryPoint = "stop_signal")]
+        public static extern void stop_signal();
+        
+        static void run(int n) {
+            double[] A = new double[n * n];
+            double[] B = new double[n * n];
+            double[] C = new double[n * n];
+            
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    A[i*n + j] = B[i*n + j] = i + j;
+                }
+            }
+            
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    double sum = 0.0;
+                    for (int k = 0; k < n; k++) {
+                        sum += A[i*n + k] * B[k*n + j];
+                    }
+                    C[i*n + j] = sum;
+                }
+            }
+            
+            Console.WriteLine($"{C[n*n - 1]:F0}");
+        }
+        
+        public static void Main(string[] args) {
+            int n = int.Parse(args[0]);
+            
+            while (start_signal()) {
+                run(n);
+                stop_signal();
+            }
+        }
+    }
+dependencies:
+    - dotnet-sdk_9 # 9.0.203
+options:
+    - -c Release
+    - -p:OutputType=Exe
+    - -p:ImplicitUsings=enable
+    - -p:Nullable=enable
+    - -p:AllowUnsafeBlocks=true
+    - -p:ServerGarbageCollection=true
+    - -p:ConcurrentGarbageCollection=true
+    - -p:OptimizationPreference=Speed
+    - -p:IlcInstructionSet=native
+---
+args: [200]
+expected_stdout: |
+    18487100

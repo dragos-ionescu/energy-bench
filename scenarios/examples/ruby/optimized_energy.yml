@@ -1,0 +1,63 @@
+implementation: ruby
+name: matrix-multiplication-optimized
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    n = ARGV[0].to_i
+
+    # Cache-friendly block sizes
+    L1_BLOCK_SIZE = 64
+    L2_BLOCK_SIZE = 256
+
+    # Allocate flat arrays
+    A = Array.new(n * n)
+    B = Array.new(n * n)
+    C = Array.new(n * n, 0.0)
+
+    # Initialize matrices
+    (0...n).each do |i|
+      (0...n).each do |j|
+        A[i * n + j] = i + j
+        B[i * n + j] = i + j
+      end
+    end
+
+    # Three-level blocking: L3 -> L2 -> L1
+    (0...n).step(L2_BLOCK_SIZE) do |i2|
+      (0...n).step(L2_BLOCK_SIZE) do |j2|
+        (0...n).step(L2_BLOCK_SIZE) do |k2|
+
+          (i2...[i2 + L2_BLOCK_SIZE, n].min).step(L1_BLOCK_SIZE) do |i1|
+            (j2...[j2 + L2_BLOCK_SIZE, n].min).step(L1_BLOCK_SIZE) do |j1|
+              (k2...[k2 + L2_BLOCK_SIZE, n].min).step(L1_BLOCK_SIZE) do |k1|
+
+                (i1...[i1 + L1_BLOCK_SIZE, n].min).each do |i|
+                  (k1...[k1 + L1_BLOCK_SIZE, n].min).each do |k|
+                    a_ik = A[i * n + k]
+                    (j1...[j1 + L1_BLOCK_SIZE, n].min).each do |j|
+                      C[i * n + j] += a_ik * B[k * n + j]
+                    end
+                  end
+                end
+
+              end
+            end
+          end
+
+        end
+      end
+    end
+
+    # Print the last element
+    puts C[n * n - 1].to_i
+dependencies:
+    - name: ruby_3_4
+      version: 3.4.3
+roptions:
+    - -W0
+---
+args: [200]
+expected_stdout: |
+    18487100

@@ -1,0 +1,172 @@
+implementation: openjdk
+name: ord-stige-2
+description: | # https://leetcode.com/problems/word-ladder-ii/description/
+    En transformationssekvens fra ordet beginWord til ordet endWord ved brug af et ordbog wordList er en sekvens af ord beginWord -> s1 -> s2 -> ... -> sk sådan at:
+    - Hvert tilstødende par af ord adskiller sig ved kun ét bogstav.
+    - Hver si for 1 <= i <= k findes i wordList. Bemærk, at beginWord ikke behøver at være i wordList.
+    - sk == endWord
+    Givet to ord, beginWord og endWord, og et ordbog wordList, returnér alle de korteste transformationssekvenser fra beginWord til endWord, eller en tom liste hvis ingen sådan sekvens findes. Hver sekvens skal returneres som en liste med ordene [beginWord, s1, s2, ..., sk].
+
+    Eksempel:
+    Input: beginWord = "hit", endWord = "cog", wordList = ["hot", "dot", "dog", "lot", "log", "cog"]
+    Output: [["hit", "hot", "dot", "dog", "cog"], ["hit", "hot", "lot", "log", "cog"]]
+    Forklaring: Der findes 2 korteste transformationssekvenser:
+    "hit" -> "hot" -> "dot" -> "dog" -> "cog"
+    "hit" -> "hot" -> "lot" -> "log" -> "cog"
+
+    Begrænsninger:
+    - 1 <= beginWord.length <= 5
+    - endWord.length == beginWord.length
+    - 1 <= wordList.length <= 500
+    - wordList[i].length == beginWord.length
+    - beginWord, endWord og wordList[i] består af små bogstaver fra det engelske alfabet.
+    - beginWord != endWord
+    - Alle ord i wordList er unikke.
+    - Summen af alle korteste transformationssekvenser overstiger ikke 10⁵.
+code: | # https://leetcode.com/problems/word-ladder-ii/solutions/40477/super-fast-java-solution-two-end-bfs
+    import java.util.*;
+
+    class Solution {
+        public List<List<String>> findLadders(String beginWord, String endWord, List<String> wordList) {
+            List<List<String>> res = new ArrayList<>();
+            HashSet<String> dict = new HashSet<>(wordList);
+            if(!dict.contains(endWord)){
+                return res;
+            }
+            HashSet<String> set1 = new HashSet<>();
+            HashSet<String> set2 = new HashSet<>();
+
+            set1.add(beginWord);
+            set2.add(endWord);
+            HashMap<String, List<String>> map = new HashMap<>();
+            bfs(map, set1, set2, dict, false);
+
+            List<String> path = new ArrayList<>();
+            path.add(beginWord);
+            dfs(res, path, map, beginWord, endWord);
+            return res;
+        }
+
+        private void bfs(HashMap<String, List<String>> map, HashSet<String> set1, HashSet<String> set2, HashSet<String> dict, boolean flip){
+            if(set1.isEmpty()){
+                return;
+            }
+
+            if(set1.size() > set2.size()){
+                bfs(map, set2, set1, dict, !flip);
+                return;
+            }
+
+            boolean done = false;
+            dict.removeAll(set1);
+            dict.removeAll(set2);
+
+            HashSet<String> next = new HashSet<>();
+            for(String str : set1){
+                char[] chs = str.toCharArray();
+                for(int i = 0; i < chs.length; i++){
+                    char temp = chs[i];
+                    for(char ch = 'a'; ch <= 'z'; ch++){
+                        if(chs[i] != ch){
+                            chs[i] = ch;
+                            String word = new String(chs);
+
+                            String key = flip ? word : str;
+                            String val = flip ? str : word;
+
+                            List<String> list = map.get(key) == null ? new ArrayList<>() : map.get(key);
+
+                            if(set2.contains(word)){
+                                done = true;
+
+                                list.add(val);
+                                map.put(key, list);
+                            }
+
+                            if(!done && dict.contains(word)){
+                                next.add(word);
+
+                                list.add(val);
+                                map.put(key, list);
+                            }
+                        }
+                    }
+                    chs[i] = temp;
+                }
+            }
+
+            if(!done){
+                bfs(map, set2, next, dict, !flip);
+            }
+        }
+
+        private void dfs(List<List<String>> res, List<String> path, HashMap<String, List<String>> map, String start, String end){
+            if(start.equals(end)){
+                res.add(new ArrayList<>(path));
+                return;
+            }
+
+            if(!map.containsKey(start)){
+                return;
+            }
+
+            for(String next : map.get(start)){
+                path.add(next);
+                dfs(res, path, map, next, end);
+                path.remove(path.size() - 1);
+            }
+        }
+    }
+
+    public class Program {
+        public static void main(String[] args) {
+            if (args.length < 3) {
+                System.err.println("Usage: java Program <beginWord> <endWord> <word1> [word2 ...]");
+                System.exit(1);
+            }
+            String beginWord = args[0];
+            String endWord = args[1];
+            List<String> wordList = new ArrayList<>();
+            for (int i = 2; i < args.length; i++) {
+                wordList.add(args[i]);
+            }
+
+            Solution sol = new Solution();
+            List<List<String>> ladders = sol.findLadders(beginWord, endWord, wordList);
+
+            if (ladders.isEmpty()) {
+                System.out.println("[]");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            for (int i = 0; i < ladders.size(); i++) {
+                List<String> path = ladders.get(i);
+                sb.append("[");
+                for (int j = 0; j < path.size(); j++) {
+                    sb.append('"').append(path.get(j)).append('"');
+                    if (j < path.size() - 1) sb.append(", ");
+                }
+                sb.append("]");
+                if (i < ladders.size() - 1) sb.append(", ");
+            }
+            sb.append("]");
+            System.out.println(sb.toString());
+        }
+    }
+dependencies:
+    - name: jdk24
+      version: 24.0.1+9
+---
+args: ["hit", "cog", "hot", "dot", "dog", "lot", "log", "cog"]
+expected_stdout: |
+    [["hit", "hot", "dot", "dog", "cog"], ["hit", "hot", "lot", "log", "cog"]]
+---
+args: ["jbykh", "drgdo", "vrpuk", "sveyt", "rwiql", "wrefl", "cugsm", "olngj", "eiuvg", "xctxz", "vhpvg", "zbzrf", "vxnhz", "mkyfa", "gsjgf", "gbrgy", "iapfw", "euxyz", "jrrok", "vjabe", "bbfal", "rcjet", "bbdep", "sfypv", "kgefu", "uunxu", "aearz", "xzqqo", "vkrdm", "wrdla", "atvyp", "ctekr", "xfbqv", "rfcva", "sfzdp", "sveyt", "hdjqq", "nnqjs", "kducw", "cwvae", "npytc", "urmpc", "nbmnx", "kkaut", "kiodu", "aybji", "wrdla", "jjaxt", "szrxt", "erqay", "ogyxm", "qytzu", "zbzrf", "nkazb", "nydld", "tfguv", "wjaml", "nwhsb", "bigcu", "pgjbo", "tecad", "swnjf", "ltkns", "almuh", "rixhx", "smljp", "wpvbc", "mhkey", "wmqpf", "wytbp", "whwim", "wytbp", "blxhu", "ttbyx", "alfop", "fsrgu", "dxthw", "wvqur", "cdfrl", "wkpoj", "rtdst", "ahqpg", "cdfrl", "oicly", "kkffe", "uyyty", "zkzay", "eqiap", "wybxa", "qxiwd", "oirdf", "wrwdf", "ulqih", "byeit", "qxcqr", "ljcvb", "kljtw", "lrgvz", "ifdns", "adfxj", "ixqwl", "awulw", "qjooo", "ubkdv", "ltihr", "ezrnf", "hlint", "esgir", "ksvev", "iwkqa", "qxiwd", "xziay", "umpeq", "bigcu", "sofpl", "sxtoh", "iefub", "qhtvx", "ugwwi", "crtzu", "renmc", "ciesf", "rzvvk", "gsjgf", "oirdf", "kkffe", "jbhuc", "fixrc", "furzj", "kxiev", "mqthp", "juila", "yekes", "zgcyu", "mxepv", "lnnpr", "zecrd", "rwkcy", "kwrdh", "wvqur", "ztuve", "kducw", "cyacx", "zpxxm", "yxogw", "hlint", "rwiql", "aqrix", "weiha", "abdwb", "ffzys", "apmus", "xorlk", "ikcsj", "jwvbw", "pwwmq", "cyacx", "skrqf", "ipgcb", "ltihr", "bbdep", "nronl", "dlzqs", "rwkcy", "hsnnw", "lrgvz", "jlefz", "vwslr", "hdjqq", "qluxo", "nydld", "iqsnm", "owyno", "awulw", "xqixl", "rysaz", "nrzra", "nsnvu", "rzvvk", "knsig", "swbyn", "sodzm", "nomcc", "tqalg", "ojqkw", "isdvn", "aiebt", "elbio", "thrvc", "enqqv", "wptvt", "vfnsc", "agxyw", "sxibt", "klwre", "appqe", "jjaxt", "pitwc", "mkyfa", "uyyty", "kljtw", "rlsrq", "sodzm", "fvytz", "vfnsc", "rbfat", "gbwak", "dskut", "kjvjs", "xqixl", "hkqap", "whwim", "zbyjt", "qktpd", "nronl", "yqxmo", "smtno", "nrzra", "gbwak", "seivo", "ykdue", "esgir", "rwbdi", "wjaml", "rwiql", "kyhqk", "dfgsb", "oqwas", "atvyp", "hpfba", "jlefz", "mmhbp", "mygtn", "uyhve", "kfttp", "wiswo", "ckkdz", "ltkns", "gfsxn", "vhink", "evdji", "vphbo", "lbvog", "zpxxm", "wekzz", "tqalg", "pwcze", "tuqcg", "sxibt", "vkrdm", "ltkns", "yekes", "ykdue", "cmrty", "efwbz", "kiabn", "irwlr", "dfgsb", "dskut", "ofdck", "ubkdv", "fmvxu", "alfop", "ogyxm", "kfttp", "zpxxm", "rasuv", "phjrk", "crtzu", "sveyt", "qsqjn", "ivjpc", "gchje", "renmc", "fjucx", "tecad", "dtrif", "wytbp", "cwvae", "xszfo", "plbaj", "vidlf", "dufsn", "vrqpc", "qjooo", "gqfix", "fsjif", "lnnpr", "wjaml", "veoic", "atftx", "pshyg", "kvrip", "efwbz", "qlspg", "ojefv", "ibkyl", "mxepv", "lcwxo", "xzqqo", "bbfal", "qfzyc", "oidab", "xoqgp", "yyrqo", "frock", "nzvfn", "zuadb", "jkmhh", "wnvdf", "nnqjs", "hkqap", "sxtoh", "nlhou", "arlyy", "zvbot", "mxepv", "ofdck", "ojqkw", "sodzm", "mxepv", "oidab", "zvbot", "zpxxm", "hckng", "zyoxd", "nronl", "jgiyq", "oktpl", "udsxn", "enqqv", "qxiwd", "qsnwq", "wybxa", "hyscd", "ftfgd", "iqsnm", "hrydo", "ekwyd", "knsig", "fzqmz", "vuyjc", "rysaz", "kkffe", "irwlr", "uyyiz", "wybxa", "dwuzc", "bvpwn", "apdeh", "euxyz", "sddrh", "mygtn", "ykdue", "hdjqq", "ltihr", "nareb", "hwemw", "nronl", "odjfb", "wuwac", "veoic", "rixhx", "iwkqa", "arlyy", "swbyn", "zgcyu", "hqdbq", "hcxed", "dkbqy", "crtzu", "fjivf", "cmrty", "jsqud", "rrzdg", "ycbtc", "vkbwz", "cetgk", "zothm", "baqaq", "almuh", "xzqqo", "wybxa", "wvdmh", "zayfw", "ftfgd", "nfekd", "uunxu", "bigcu", "yxxnm", "yekes", "hpfba", "ykrpj", "bbfal", "dkbqy", "zyoxd", "zvbot", "trbfr", "qmgqk", "mygtn", "rrzdg", "mkyfa", "vkbwz", "mkyfa", "xljtj", "sfzdp", "qmejs", "wakqu", "hqdbq", "almuh", "ztuve", "fixrc", "rwbdi", "zothm", "yqxmo", "qfzyc", "hrydo", "arlyy", "fzish", "vbmzm", "rwbdi", "weiha", "fvytz", "qluxo", "owefa", "kkffe", "vfnsc", "nfekd", "urqzb", "lttld", "nareb", "wybxa", "cusbf", "udpdi", "rlsrq", "rsizk", "fhojz", "zsuph", "lttld", "gyxjh", "crtzu", "nkazb", "vyrlr", "uyhve", "wjaml", "jwvbw", "qjpet", "flipx", "ykrpj", "ycgtn", "iilmu", "qhtvx", "gixev", "nciyb", "ckkdz", "wnvdf", "nkazb", "hwsef", "vqfox", "mbhme", "pwcze", "rsizk", "gabqm", "nfekd", "dskut", "fghzj", "ikcsj", "mqbhr", "byeit", "tmtqp", "ixqwl", "vhink", "rzroo", "oktpl", "xctxz", "jeogv", "jsqud", "ogyxm", "sfzdp", "uyyiz", "nrzra", "wptvt", "xqixl", "bndsl", "ycyto", "alfop", "mqthp", "abdwb", "almuh", "wzxux", "pdcoq"]
+expected_stdout: |
+    []
+---
+args: ["e", "z", "g", "r", "c", "l", "n", "g", "b", "c", "h", "m", "r", "f", "s", "r", "k", "n", "p", "n", "e", "m", "y", "o", "a", "w", "r", "j", "y", "o", "c", "i", "x", "w", "h", "k", "o", "z", "o", "t", "e", "u", "k", "o", "e", "l", "n", "e", "y", "s", "c", "h", "q", "v", "c", "r", "r", "v", "r", "n", "g", "l", "y", "p", "a", "u", "e", "i", "v", "z", "a", "t", "e", "l", "z", "a", "h", "a", "x", "n", "s", "s", "k", "r", "k", "e", "y", "t", "r", "g", "s", "u", "h", "s", "v", "e", "n", "o", "o", "k", "m", "i", "l", "c", "s", "w", "q", "h", "b", "v", "s", "g", "r", "m", "c", "d", "p", "m", "x", "j", "s", "j", "v", "x", "q", "c", "d", "j", "g", "w", "v", "i", "u", "m", "y", "l", "j", "e", "u", "q", "u", "a", "i", "b", "t", "c", "c", "w", "t", "d", "i", "o", "b", "i", "f", "v", "a", "v", "h", "w", "j", "k", "u", "n", "u", "c", "d", "v", "c", "k", "u", "a", "m", "e", "i", "l", "m", "a", "j", "c", "s", "c", "r", "y", "r", "t", "z", "a", "r", "u", "n", "m", "s", "r", "z", "d", "m", "z", "j", "v", "t", "j", "a", "x", "g", "r", "v", "y", "v", "c", "k", "s", "p", "n", "w", "x", "r", "o", "t", "m", "g", "g", "h", "z", "m", "c", "c", "u", "w", "v", "m", "t", "j", "d", "m", "j", "k", "t", "c", "j", "e", "e", "l", "b", "j", "o", "o", "l", "s", "b", "k", "w", "e", "l", "w", "m", "l", "i", "r", "f", "m", "i", "r", "e", "n", "t", "r", "k", "e", "u", "c", "j", "t", "a", "h", "q", "c", "u", "b", "d", "l", "k", "n", "x", "x", "y", "f", "o", "t", "o", "s", "l", "k", "h", "r", "z", "z", "l", "z", "d", "n", "h", "j", "b", "c", "a", "a", "f", "m", "g", "a", "r", "y", "y", "m", "o", "y", "h", "a", "r", "t", "f", "y", "c", "r", "i", "x", "m", "h", "s", "i", "j", "s", "w", "n", "k", "e", "c", "i", "h", "w", "o", "x", "k", "a", "j", "f", "r", "d", "x", "p", "h", "r", "k", "m", "g", "b", "v", "e", "k", "r", "c", "f", "s", "t", "a", "f", "g", "s", "a", "y", "r", "a", "h", "e", "d", "c", "c", "u", "c", "e", "a", "u", "u", "o", "k", "v", "w", "s", "r", "i", "c", "g", "t", "o", "f", "g", "g", "k", "v", "s", "z", "i", "b", "f", "a", "z", "i", "c", "y", "b", "i", "q", "e", "b", "x", "n", "e", "h", "g", "p", "y", "j", "f", "r", "h", "z", "o", "x", "j", "s", "s", "m", "y", "e", "g", "q", "a", "a", "c", "q", "q", "r", "y", "v", "e", "a", "d", "s", "s", "c", "o", "r", "c", "r", "i", "z", "n", "y", "c"]
+expected_stdout: |
+    [["e", "z"]]

@@ -1,0 +1,24 @@
+implementation: c
+name: trial
+description: |
+    A trivial C program used as baseline to determine how much energy
+    the energy-bench tool is using 'by itself'.
+code: |
+    #include <unistd.h>
+    #include <energy_signal.h>
+
+    int main() {
+        while (start_signal()) {
+            sleep(1);
+            stop_signal();
+        }
+        return 0;
+    }
+dependencies:
+    - gcc14
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+---

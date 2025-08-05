@@ -1,0 +1,48 @@
+implementation: openjdk
+name: matrix-multiplication
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    public class Program {
+        static void run(int n) {
+            double[] A = new double[n * n];
+            double[] B = new double[n * n];
+            double[] C = new double[n * n];
+            
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    A[i*n + j] = B[i*n + j] = i + j;
+                }
+            }
+            
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    double sum = 0.0;
+                    for (int k = 0; k < n; k++) {
+                        sum += A[i*n + k] * B[k*n + j];
+                    }
+                    C[i*n + j] = sum;
+                }
+            }
+            
+            System.out.printf("%.0f\n", C[n*n - 1]);
+        }
+        
+        public static void main(String[] args) throws Throwable {
+            EnergySignal signal = new EnergySignal();
+            int n = Integer.parseInt(args[0]);
+            
+            while (signal.startSignal() > 0) {
+                run(n);
+                signal.stopSignal();
+            }
+        }
+    }
+dependencies:
+    - jdk23 # 23.0.1+11
+---
+args: [200]
+expected_stdout: |
+    18487100

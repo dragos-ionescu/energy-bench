@@ -1,0 +1,50 @@
+implementation: c
+name: matrix-multiplication
+description: |
+    Create two square matrices of size N×N.
+    Each cell within these two matrices will be initialized with the sum of their row and column indices.
+    Multiply the two matrices and output the contents of the last cell.
+code: |
+    #include <stdio.h>
+    #include <stdlib.h>
+
+    int main(int argc, char *argv[]) {
+        int n = atoi(argv[1]);
+        double *A = malloc(n * n * sizeof(double));
+        double *B = malloc(n * n * sizeof(double));
+        double *C = malloc(n * n * sizeof(double));
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                A[i*n + j] = B[i*n + j] = i + j;
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                double sum = 0.0;
+                for (int k = 0; k < n; k++) {
+                    sum += A[i*n + k] * B[k*n + j];
+                }
+                C[i*n + j] = sum;
+            }
+        }
+
+        printf("%.0f\n", C[n*n - 1]);
+
+        free(A);
+        free(B);
+        free(C);
+        return 0;
+    }
+dependencies:
+    - name: gcc
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+---
+args: [200]
+expected_stdout: |
+    18487100
