@@ -1,0 +1,250 @@
+implementation: cpp
+name: fannkuch-redux
+description: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html#fannkuchredux
+    The fannkuch benchmark is defined by programs in [pdf]Performing Lisp Analysis of the FANNKUCH Benchmark, Kenneth R. Anderson and Duane Rettig. FANNKUCH is an abbreviation for the German word Pfannkuchen, or pancakes, in analogy to flipping pancakes. The conjecture is that the maximum count is approximated by n*log(n) when n goes to infinity.
+    We ask that contributed programs not only give the correct result, but also **use the same algorithm** to calculate that result.
+    Each program should:
+        - Take a permutation of {1,...,n}, for example: {4,2,1,5,3}.
+        - Take the first element, here 4, and reverse the order of the first 4 elements: {5,1,2,4,3}.
+        - Repeat this until the first element is a 1, so flipping won't change anything more: {3,4,2,1,5}, {2,4,3,1,5}, {4,2,3,1,5}, {1,3,2,4,5}.
+        - Count the number of flips, here 5.
+        - Keep a checksum
+            - checksum = checksum + (if permutation_index is even then flips_count else -flips_count)
+            - checksum = checksum + (toggle_sign_-1_1 * flips_count)
+        - Do this for all n! permutations, and record the maximum number of flips needed for any permutation.
+        - common idea for parallel implementation is to divide all work (n! permutations) into chunks small enough to avoid load imbalance but large enough to keep overhead low. I set the number of chunks as a parameter (NCHUNKS = 150) from which I derive the size of a chunk (CHUNKSZ) and the actual number of chunks/tasks to be processed (NTASKS), which may be different from NCHUNKS because of rounding.
+        - Task scheduling is trivial: threads will atomically get and increment the taskId variable to derive a range of permutation indices to work on:
+            task = taskId.getAndIncrement();
+            idxMin = task * CHUNKSZ;
+            idxMax = min( idxMin + CHUNKSZ, n! );
+        - Maximum flip counts and partial checksums can be computed for chunks in arbitrary order and recombined to generate the required result at the final step (CHUNKSZ must be even for adding partial checksums to be associative).
+        - Now I need to go from a permutation index to the permutation itself.
+        - The predefined order in which all permutations are to be generated can be described as follows: to generate n! permutations of n arbitrary numbers, rotate the numbers left (from higher position to lower) n times, so that each number appears in the n-th position, and for each rotation recursively generate (n-1)! permutations of the first n-1 numbers whatever they are.
+        - To optimize the process I use an intermediate data structure, count[], which keeps count of how many rotations have been done at every level. Apparently, count[0] is always 0, as there is only one element at that level, which can't be rotated; count[1] = 0..1 for two elements, count[2] = 0..2 for three elements, etc.
+        - To generate next permutation I swap the first two elements and increase count[1]. If count[1] becomes greater than 1, I'm done with rotations at level 1 and need to "return" (as it would have been in the recursive implementation) to level 2. Now, I rotate 3 elements and increment count[2]. If it becomes greater than 2, I'm done with level 2 and need to go to level 3, etc.
+        - It should be clear now how to generate a permutation and corresponding count[] array from an arbitrary index. Basically, count[k] = ( index % (k+1)! ) / k! is the number of rotations we need to perform on elements 0..k. Doing it in the descending order from n-1 to 1 gives us both the count[] array and the permutation.
+code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gpp-5.html
+    // The Computer Language Benchmarks Game
+    // https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
+    //
+    // Contributed by Dave Compton
+    // Based on "fannkuch-redux C gcc #5", contributed by Jeremy Zerfas
+    // which in turn was based on the Ada program by Jonathan Parker and
+    // Georg Bauhaus which in turn was based on code by Dave Fladebo,
+    // Eckehard Berns, Heiner Marxen, Hongwei Xi, and The Anh Tran and
+    // also the Java program by Oleg Mazurov.
+
+    #include <iostream>
+    #include <vector>
+    #include <algorithm>
+
+    #include <energy_signal.h>
+
+    using namespace std;
+
+    static int64_t fact[32];
+
+    void initializeFact(int n)
+    {
+        fact[0] = 1;
+        for (auto i = 1; i <= n; ++i)
+            fact[i] = i * fact[i - 1];
+    }
+
+    class Permutation
+    {
+      public:
+        Permutation(int n, int64_t start);
+        void advance();
+        int64_t countFlips() const;
+
+      private:
+         vector <int> count;
+         vector <int8_t> current;
+
+    };
+
+    //
+    // Initialize the current value of a permutation
+    // and the cycle count values used to advance .
+    //
+    Permutation::Permutation(int n, int64_t start)
+    {
+        count.resize(n);
+        current.resize(n);
+
+        // Initialize count
+        for (auto i = n - 1; i >= 0; --i)
+        {
+            auto d = start / fact[i];
+            start = start % fact[i];
+            count[i] = d;
+        }
+
+        // Initialize current.
+        for (auto i = 0; i < n; ++i)
+            current[i] = i;
+
+        for (auto i = n - 1; i >= 0; --i)
+        {
+            auto d = count[i];
+            auto b = current.begin();
+            rotate(b, b + d, b + i + 1);
+        }
+    }
+
+    //
+    // Advance the current permutation to the next in sequence.
+    //
+    void Permutation::advance()
+    {
+        for (auto i = 1; ;++i)
+        {
+            // Tried using std::rotate here but that was slower.
+            auto first = current[0];
+            for (auto j = 0; j < i; ++j)
+                current[j] = current[j + 1];
+            current[i] = first;
+
+            ++(count[i]);
+            if (count[i] <= i)
+                break;
+            count[i] = 0;
+        }
+    }
+
+    //
+    // Count the flips required to flip 0 to the front of the vector.
+    //
+    // Other than minor cosmetic changes, the following routine is
+    // basically lifted from "fannkuch-redux C gcc #5"
+    //
+    int64_t Permutation::countFlips() const
+    {
+        const auto n = current.size();
+        auto flips = 0;
+        auto first = current[0];
+        if (first > 0)
+        {
+            flips = 1;
+
+            int8_t temp[n];
+            // Make a copy of current to work on.
+            for (size_t i = 0; i < n; ++i)
+                temp[i] = current[i];
+
+
+            // Flip temp until the element at the first index is 0
+            for (; temp[first] > 0; ++flips)
+            {
+                // Record the newFirst and restore the old
+                // first at its new flipped position.
+                const int8_t newFirst = temp[first];
+                temp[first] = first;
+
+                if (first > 2)
+                {
+                    int64_t low = 1, high = first - 1;
+                    do
+                    {
+                        swap(temp[low], temp[high]);
+                        if (!(low + 3 <= high && low < 16))
+                            break;
+                        ++low;
+                        --high;
+                    } while (1);
+                }
+                // Update first to newFirst that we recorded earlier.
+                first = newFirst;
+            }
+        }
+        return flips;
+    }
+
+    void run_benchmark(char **argv)
+    {
+        const auto n = atoi(argv[1]);
+
+        // Compute some factorials for later use.
+        initializeFact(n);
+
+        // blockCount works best if it is set to a multiple of the number
+        // of CPUs so that the same number of blocks gets distributed to
+        // each cpu.  The computer used for development (Intel i7-4700MQ)
+        // had 8 "CPU"s (4 cores with hyperthreading) so 8, 16 and 24
+        // all worked well.
+
+        auto blockCount = 24;
+        if (blockCount > fact[n])
+            blockCount = 1;
+        const int64_t blockLength = fact[n] / blockCount;
+
+        int64_t maxFlips = 0, checksum = 0;
+
+        // Iterate over each block.
+        #pragma omp parallel for \
+            reduction(max:maxFlips) \
+            reduction(+:checksum)
+
+        for (int64_t blockStart = 0;
+             blockStart < fact[n];
+             blockStart += blockLength)
+        {
+            // first permutation for this block.
+            Permutation permutation(n, blockStart);
+
+            // Iterate over each permutation in the block.
+            auto index = blockStart;
+            while (1)
+            {
+                const auto flips = permutation.countFlips();
+
+                if (flips)
+                {
+                    if (index % 2 == 0)
+                        checksum += flips;
+                    else
+                        checksum -= flips;
+
+                    if (flips > maxFlips)
+                        maxFlips = flips;
+                }
+
+                if (++index == blockStart + blockLength)
+                    break;
+
+                // next permutation for this block.
+                permutation.advance();
+            }
+        }
+
+        // Output the results to stdout.
+        cout << checksum << endl;
+        cout << "Pfannkuchen(" << n << ") = " << maxFlips << endl;
+    }
+
+    int main(int argc, char **argv)
+    {
+        while (start_signal())
+        {
+            run_benchmark(argv);
+            stop_signal();
+        }
+
+        return 0;
+    }
+dependencies:
+    - name: gcc15
+      version: 15.1.0
+options:
+    - -pipe
+    - -O3
+    - -march=native
+    - -fomit-frame-pointer
+    - -std=c++11
+    - -fopenmp
+---
+args: [12]
+expected_stdout: |
+    3968050
+    Pfannkuchen(12) = 65
