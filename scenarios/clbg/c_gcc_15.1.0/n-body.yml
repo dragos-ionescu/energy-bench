@@ -20,7 +20,6 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nb
     #include <math.h>
     #include <stdio.h>
     #include <stdlib.h>
-
     #include <energy_signal.h>
 
     #define pi 3.141592653589793
@@ -161,7 +160,7 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nb
       printf ("%.9f\n", energy(NBODIES, bodies));
     }
 
-    int main(int argc, char ** argv)
+    int main(int argc, char **argv)
     {
       while (1) {
         initialize();

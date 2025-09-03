@@ -25,7 +25,6 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/bi
     #include <stdlib.h>
     #include <stdio.h>
     #include <pthread.h>
-
     #include <energy_signal.h>
 
     typedef struct node {
@@ -102,13 +101,13 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/bi
        return NULL;
     }
 
-    void run_benchmark(int ac, char **av)
+    void run_benchmark(int argc, char **argv)
     {
        node *stretch, *longlived;
        struct worker_args *args, *targs, *hargs;
        int n, depth, mindepth, maxdepth, stretchdepth;
 
-       n = ac > 1 ? atoi(av[1]) : 10;
+       n = argc > 1 ? atoi(argv[1]) : 10;
        if (n < 1) {
           fprintf(stderr, "Wrong argument.\n");
           exit(1);
@@ -159,12 +158,12 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/bi
        delete_tree(longlived);
     }
 
-    int
-    main(int ac, char **av)
+    int main(int argc, char **argv)
     {
-        while (start_signal())
+        while (1)
         {
-            run_benchmark(ac, av);
+            if (!start_signal()) break;
+            run_benchmark(argc, argv);
             stop_signal();
         }
         return 0;

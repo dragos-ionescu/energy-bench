@@ -26,7 +26,6 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/sp
     #include <sched.h>
     #include <stdio.h>
     #include <stdlib.h>
-
     #include <energy_signal.h>
 
     #define false 0
@@ -259,21 +258,21 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/sp
         return sqrt(vBv/vv);
     }
 
-    void run(int argc, char *argv[])
+    void run_benchmark(int argc, char **argv)
     {
         int N = ((argc >= 2) ? atoi(argv[1]) : 2000);
 
         printf("%.9f\n", spectral_game(N));
     }
 
-    int
-    main(int argc, char *argv[])
+    int main(int argc, char **argv)
     {
-       while (start_signal())
-       {
-          run(argc, argv);
-          stop_signal();
-       }
+        while (1)
+        {
+            if (!start_signal()) break;
+            run_benchmark(argc, argv);
+            stop_signal();
+        }
         return 0;
     }
 dependencies:

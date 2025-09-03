@@ -44,13 +44,12 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fa
     #include <stdint.h>
     #include <stdlib.h>
     #include <stdio.h>
-
     #include <energy_signal.h>
 
     // intptr_t should be the native integer type on most sane systems.
     typedef intptr_t intnative_t;
 
-    void run_benchmark(char ** argv) {
+    void run_benchmark(int argc, char ** argv) {
        const intnative_t n=atoi(argv[1]);
 
        // Create and initialize factorial_Lookup_Table.
@@ -197,12 +196,14 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fa
          (intmax_t)maximum_Flip_Count);
     }
 
-    int main(int argc, char ** argv){
-       while (start_signal()) {
-          run_benchmark(argv);
-          stop_signal();
-       }
-
+    int main(int argc, char **argv)
+    {
+        while (1)
+        {
+            if (!start_signal()) break;
+            run_benchmark(argc, argv)
+            stop_signal();
+        }
        return 0;
     }
 dependencies:
