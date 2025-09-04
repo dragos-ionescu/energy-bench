@@ -1,14 +1,18 @@
 implementation: c
 name: spectral-norm
 description: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html#spectralnorm
-    Compute an approximation of the spectral norm ‖A‖₂ (largest singular value) of the infinite matrix
-    - a_{ij} = 1 / ((i + j)(i + j + 1) / 2 + i + 1),    i, j ≥ 0.
-    - Initialise a length-N vector u = (1, 1, …, 1)ᵀ.
-    - Power-iteration loop – repeat N times:
-    - v ← A·u (matrix–vector product on-the-fly)
-    - u ← Aᵀ·v (transpose product)
-    - Estimate the norm ‖A‖₂ ≈ √((u · v) / (v · v)).
-    - Modular helpers to expose A(i,j), Av(u), Atv(v), and spectralNorm(N).
+    ## Background
+    MathWorld: ["Hundred-Dollar, Hundred-Digit Challenge Problems", Challenge #3.](http://mathworld.wolfram.com/SpectralNorm.html)
+    Thanks to Sebastien Loisel for suggesting this task.
+
+    ## How to implement
+    We ask that contributed programs not only give the correct result, but also **use the same algorithm** to calculate that result.
+    Each program should:
+    - calculate the spectral norm of an infinite matrix A, with entries a11=1, a12=1/2, a21=1/3, a13=1/4, a22=1/5, a31=1/6, etc
+    - implement 4 separate functions / procedures / methods like the [Java program](https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-java-1.html)
+
+    **diff** program output N = 100 with this [output file](https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/spectralnorm-output.txt) to check your program output has the correct format, before you [contribute your program.](https://salsa.debian.org/benchmarksgame-team/benchmarksgame/blob/master/README.md)
+    Use a larger command line argument (5500) to check program performance.
 code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-gcc-4.html
     /* The Computer Language Benchmarks Game
      * https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
