@@ -210,6 +210,7 @@ class Implementation:
                 f"LIBRARY_PATH={self.base_dir}:$(echo $NIX_LDFLAGS | sed 's/-rpath //g; s/-L//g' | tr ' ' ':'):$LIBRARY_PATH",
                 f"LD_LIBRARY_PATH={self.base_dir}:$(echo $NIX_LDFLAGS | sed 's/-rpath //g; s/-L//g' | tr ' ' ':'):$LD_LIBRARY_PATH",
                 f"CPATH={self.base_dir}:$(echo $NIX_CFLAGS_COMPILE | sed -e 's/-frandom-seed=[^ ]*//g' -e 's/-isystem/ /g' | tr -s ' ' | sed 's/ /:/g'):$CPATH",
+                "NIX_ENFORCE_NO_NATIVE=",
                 f"ITERATIONS={self.iterations if self.warmup else 1}",
             ]
         )
