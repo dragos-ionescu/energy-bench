@@ -1,13 +1,18 @@
 implementation: graalvm
 name: n-body
 description: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html#nbody
-    Simulate the orbital dynamics of the Sun together with Jupiter, Saturn, Uranus, and Neptune.
-    - Use a simple symplectic (semi-implicit Euler) method.
-    - Begin with canonical heliocentric positions and velocities.
-    - Adjust the Sun’s velocity so the system’s total linear momentum is zero (centre-of-mass frame).
-    - Let the user specify the number N of equal-length time steps.
-    - In each step, compute all pairwise gravitational forces with an O(bodies2)O(bodies2) double loop.
-    - Print total mechanical energy (kinetic + potential) once before the simulation and once after it finishes, to reveal any energy drift.
+    ## Background
+    Model the orbits of Jovian planets, using the same simple symplectic-integrator.
+    Thanks to Mark C. Lewis for suggesting this task.
+    Useful symplectic integrators are freely available, for example the [HNBody Symplectic Integration Package.](http://janus.astro.umd.edu/HNBody/)
+
+    ## How to implement
+    We ask that contributed programs not only give the correct result, but also **use the same algorithm** to calculate that result.
+    Each program should:
+    - use the same simple symplectic-integrator - see the Java program.
+
+    **[ndiff](http://www.math.utah.edu/~beebe/software/ndiff/) -abserr 1.0e-8** program output N = 1000 with this [output file](https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/nbody-output.txt) to check your program output has the correct format, before you [contribute your program.](https://salsa.debian.org/benchmarksgame-team/benchmarksgame/blob/master/README.md)
+    Use a larger command line argument (50000000) to check program performance.
 code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-graalvmaot-4.html
     /* The Computer Language Benchmarks Game
        https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
@@ -21,8 +26,9 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nb
     public final class Program {
         public static void main(String[] args) throws Exception {
             EnergySignal signal = new EnergySignal();
-            
-            while (signal.startSignal() > 0) {
+            while (true)
+            {
+                if (signal.startSignal() == 0) break;
                 run_benchmark(args);
                 signal.stopSignal();
             }
