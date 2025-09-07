@@ -153,7 +153,7 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nb
       bodies[4].mass = 5.15138902046611451e-05 * solar_mass;
     }
 
-    void run_benchmark(char ** argv)
+    void run_benchmark(int argc, char **argv)
     {
       int n = atoi(argv[1]);
       int i;
@@ -167,13 +167,14 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nb
 
     int main(int argc, char **argv)
     {
-      while (1) {
-        initialize();
-        if (!start_signal()) break;
-        run_benchmark(argv);
-        stop_signal();
-      }
-      return 0;
+        while (1)
+        {
+            initialize();
+            if (!start_signal()) break;
+            run_benchmark(argc, argv);
+            stop_signal();
+        }
+        return 0;
     }
 dependencies:
     - name: gcc15

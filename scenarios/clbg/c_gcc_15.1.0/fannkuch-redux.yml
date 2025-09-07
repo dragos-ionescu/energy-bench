@@ -60,7 +60,7 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fa
     // intptr_t should be the native integer type on most sane systems.
     typedef intptr_t intnative_t;
 
-    void run_benchmark(int argc, char ** argv) {
+    void run_benchmark(int argc, char **argv) {
        const intnative_t n=atoi(argv[1]);
 
        // Create and initialize factorial_Lookup_Table.
@@ -212,7 +212,7 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fa
         while (1)
         {
             if (!start_signal()) break;
-            run_benchmark(argc, argv)
+            run_benchmark(argc, argv);
             stop_signal();
         }
        return 0;

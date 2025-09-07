@@ -30,6 +30,9 @@ description: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/des
     **diff** program output N = 10 with this 1KB [output file](https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/binarytrees-output.txt) to check your program output has the correct format, before you [contribute your program](https://salsa.debian.org/benchmarksgame-team/benchmarksgame/blob/master/README.md).
     Use a larger command line argument (21) to check program performance.
     Thanks to Eamon Nerbonne for repeatedly showing what was wrong with the old way of checking these programs, and to Brad Chamberlain for suggesting that a simple check should work.
+# Benchamrk implementation is not reproducible.
+# Doesn't clear memory after each iteration.
+# Results in larger energy usage every iteration.
 code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-gcc-5.html
     /* The Computer Language Benchmarks Game
      * https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
