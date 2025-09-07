@@ -15,7 +15,13 @@ class ReportCommand(BaseCommand):
     def __init__(self, base_dir) -> None:
         super().__init__(base_dir)
         self.requested_events = get_requested_perf_events()
-        self.unit_map = {"Pkg": "J", "Core": "J", "Uncore": "J", "Dram": "J", "Time": "s"}
+        self.unit_map = {
+            "Pkg": "J",
+            "Core": "J",
+            "Uncore": "J",
+            "Dram": "J",
+            "Time": "s",
+        }
         self.colorway = [
             "#000000",
             "#E69F00",
@@ -29,7 +35,11 @@ class ReportCommand(BaseCommand):
 
     def add_args(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
-            "-s", "--skip", type=int, default=0, help="Number of rows to skip for each measurement"
+            "-s",
+            "--skip",
+            type=int,
+            default=0,
+            help="Number of rows to skip for each measurement",
         )
         parser.add_argument(
             "-a",
@@ -69,10 +79,8 @@ class ReportCommand(BaseCommand):
 
     def handle_compile(self, args: argparse.Namespace) -> pd.DataFrame:
         compiled = []
-
         for result in args.results:
             _, work, _, mode, impl, scen, model = self.split_result_path(result)
-
             try:
                 with open(result) as file:
                     data = []
@@ -81,24 +89,19 @@ class ReportCommand(BaseCommand):
                         data.append(json.loads(fixed_line))
             except Exception as ex:
                 raise ProgramError(f"failed while reading result - {ex}")
-
             df = pd.DataFrame(data)
-
             numeric_cols = ["counter-value", "interval"]
             for col in numeric_cols:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors="coerce").astype(float)
-
             df["group"] = (
                 df["interval"] < df["interval"].shift(1, fill_value=float("inf"))
             ).cumsum()
-
             cumsum_cols = {}
             for event in self.requested_events:
                 mask = df["event"] == event
                 cumsum = (mask * df["counter-value"]).cumsum()
                 cumsum_cols[event] = cumsum
-
             iterations = []
             for _, group in df.groupby("group"):
                 start_probes = [
@@ -109,31 +112,52 @@ class ReportCommand(BaseCommand):
                     "probe_libenergy_signal:stop_signal",
                     "probe_libenergy_signal:stopSignal",
                 ]
-                starts = group.loc[
+
+                # Get all matching indices
+                start_indices = group.loc[
                     group["event"].isin(start_probes) & (group["counter-value"] == 1.0)
                 ].index.tolist()
-
-                stops = group.loc[
+                stop_indices = group.loc[
                     group["event"].isin(stop_probes) & (group["counter-value"] == 1.0)
                 ].index.tolist()
+
+                # Deduplicate by interval timestamp to handle both Java and Python naming conventions
+                if start_indices and stop_indices:
+                    start_intervals = group.loc[start_indices, "interval"].values
+                    stop_intervals = group.loc[stop_indices, "interval"].values
+
+                    # Keep only unique intervals, preserving first occurrence
+                    starts = []
+                    seen_start_intervals = set()
+                    for idx, interval in zip(start_indices, start_intervals):
+                        if interval not in seen_start_intervals:
+                            starts.append(idx)
+                            seen_start_intervals.add(interval)
+
+                    stops = []
+                    seen_stop_intervals = set()
+                    for idx, interval in zip(stop_indices, stop_intervals):
+                        if interval not in seen_stop_intervals:
+                            stops.append(idx)
+                            seen_stop_intervals.add(interval)
+                else:
+                    starts = start_indices
+                    stops = stop_indices
 
                 if not starts and not stops:
                     iterations.append((group.index[0], group.index[-1]))
                 else:
                     for start, stop in zip(starts, stops[: len(starts)]):
                         iterations.append((start, stop))
-
             for i, (start, stop) in enumerate(iterations, 1):
                 event_sums = {}
                 for event in self.requested_events:
                     pre_start = cumsum_cols[event].get(start - 1, default=0)
                     sum_val = cumsum_cols[event].at[stop] - pre_start
                     event_sums[event] = round(sum_val, 2)
-
                 start_s = df.at[start, "interval"]
                 stop_s = df.at[stop, "interval"]
                 time_s = round(stop_s - start_s, 2)
-
                 compiled.append(
                     {
                         "iter": i,
@@ -153,7 +177,9 @@ class ReportCommand(BaseCommand):
         agg_cols = ["time"] + list(self.requested_events)
         return raw_df.groupby(args.average)[agg_cols].mean().round(2).reset_index()
 
-    def output_result(self, result: str | pd.DataFrame, args: argparse.Namespace) -> None:
+    def output_result(
+        self, result: str | pd.DataFrame, args: argparse.Namespace
+    ) -> None:
         if isinstance(result, pd.DataFrame):
             if args.format == "csv":
                 output = result.to_csv(index=False)
@@ -254,7 +280,9 @@ class ReportCommand(BaseCommand):
     #         adjusted.append(r)
     #     return adjusted
 
-    def split_result_path(self, result: str) -> tuple[str, str, str, str, str, str, str]:
+    def split_result_path(
+        self, result: str
+    ) -> tuple[str, str, str, str, str, str, str]:
         path = os.path.abspath(os.path.expanduser(result)).rstrip(os.sep)
         if os.path.isfile(path):
             path = os.path.dirname(path)
