@@ -19,11 +19,186 @@ description: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/des
 
     **diff** program output N = 30 with this [output file](https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/pidigits-output.txt) to check your program output has the correct format, before you [contribute your program.](https://salsa.debian.org/benchmarksgame-team/benchmarksgame/blob/master/README.md)
     Use a larger command line argument (10000) to check program performance.
-    Adapt the **step-by-step** algorithm given on pages 4,6 & 7 of [pdf 156KB] [Unbounded Spigot Algorithms for the Digits of Pi.](http://web.comlab.ox.ac.uk/oucl/work/jeremy.gibbons/publications/spigot.pdf) (**Not** the deliberately obscure version given on page 2. **Not** the Rabinowitz-Wagon algorithm.)
-code: | #
+code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-graalvmaot-5.html
+    /* The Computer Language Benchmarks Game
+     * https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
+     *
+     * Contributed by Michael Ganss
+     * derived from PHP version that was
+     * contributed by Oleksii Prudkyi
+     * port from pidigits.lua-5.lua (Mike Pall, Wim Couwenberg)
+     * modified by Craig Russell
+     *
+     * Original C version by Mr Ledrug
+     *
+     * ported to Java by Piotr Tarsa
+     */
+    import java.lang.foreign.*;
+    import java.lang.invoke.MethodHandle;
+
+    public class Program {
+        private static final Arena GLOBAL_ARENA = Arena.global();
+        private static final Linker LINKER = Linker.nativeLinker();
+
+        // Load GMP library dynamically
+        private static final SymbolLookup GMP_LIB = SymbolLookup.libraryLookup("libgmp.so", GLOBAL_ARENA);
+
+        // Value layouts
+        private static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
+        private static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
+        private static final AddressLayout C_POINTER = ValueLayout.ADDRESS;
+
+        // mpz_t struct layout
+        private static final MemoryLayout MPZ_T = MemoryLayout.structLayout(
+                C_INT.withName("_mp_alloc"),
+                C_INT.withName("_mp_size"),
+                C_POINTER.withName("_mp_d")
+        ).withName("__mpz_struct");
+
+        // Dynamic function handles
+        private static final MethodHandle mpz_init = createHandle("__gmpz_init",
+            FunctionDescriptor.ofVoid(C_POINTER));
+        private static final MethodHandle mpz_init_set_si = createHandle("__gmpz_init_set_si",
+            FunctionDescriptor.ofVoid(C_POINTER, C_LONG));
+        private static final MethodHandle mpz_tdiv_q = createHandle("__gmpz_tdiv_q",
+            FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER));
+        private static final MethodHandle mpz_cmp = createHandle("__gmpz_cmp",
+            FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER));
+        private static final MethodHandle mpz_get_si = createHandle("__gmpz_get_si",
+            FunctionDescriptor.of(C_LONG, C_POINTER));
+        private static final MethodHandle mpz_mul_si = createHandle("__gmpz_mul_si",
+            FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_LONG));
+        private static final MethodHandle mpz_mul = createHandle("__gmpz_mul",
+            FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER));
+        private static final MethodHandle mpz_add = createHandle("__gmpz_add",
+            FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER));
+
+        private static MemorySegment n1, n2, d, u, v, w;
+
+        private static MethodHandle createHandle(String functionName, FunctionDescriptor descriptor) {
+            try {
+                MemorySegment symbol = GMP_LIB.find(functionName).orElseThrow(
+                    () -> new RuntimeException("Function not found: " + functionName));
+                return LINKER.downcallHandle(symbol, descriptor);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create handle for: " + functionName, e);
+            }
+        }
+
+        private static MemorySegment alloc(MemoryLayout typeDescription) {
+            return GLOBAL_ARENA.allocate(typeDescription);
+        }
+
+        // Wrapper methods for cleaner code
+        private static void gmpz_init(MemorySegment x) {
+            try { mpz_init.invokeExact(x); } catch (Throwable t) { throw new RuntimeException(t); }
+        }
+
+        private static void gmpz_init_set_si(MemorySegment x, long val) {
+            try { mpz_init_set_si.invokeExact(x, val); } catch (Throwable t) { throw new RuntimeException(t); }
+        }
+
+        private static void gmpz_tdiv_q(MemorySegment q, MemorySegment n, MemorySegment d) {
+            try { mpz_tdiv_q.invokeExact(q, n, d); } catch (Throwable t) { throw new RuntimeException(t); }
+        }
+
+        private static int gmpz_cmp(MemorySegment x, MemorySegment y) {
+            try { return (int) mpz_cmp.invokeExact(x, y); } catch (Throwable t) { throw new RuntimeException(t); }
+        }
+
+        private static long gmpz_get_si(MemorySegment x) {
+            try { return (long) mpz_get_si.invokeExact(x); } catch (Throwable t) { throw new RuntimeException(t); }
+        }
+
+        private static void gmpz_mul_si(MemorySegment rop, MemorySegment op1, long op2) {
+            try { mpz_mul_si.invokeExact(rop, op1, op2); } catch (Throwable t) { throw new RuntimeException(t); }
+        }
+
+        private static void gmpz_mul(MemorySegment rop, MemorySegment op1, MemorySegment op2) {
+            try { mpz_mul.invokeExact(rop, op1, op2); } catch (Throwable t) { throw new RuntimeException(t); }
+        }
+
+        private static void gmpz_add(MemorySegment rop, MemorySegment op1, MemorySegment op2) {
+            try { mpz_add.invokeExact(rop, op1, op2); } catch (Throwable t) { throw new RuntimeException(t); }
+        }
+
+        private static void initialize() {
+            n1 = alloc(MPZ_T);
+            n2 = alloc(MPZ_T);
+            d = alloc(MPZ_T);
+            u = alloc(MPZ_T);
+            v = alloc(MPZ_T);
+            w = alloc(MPZ_T);
+        }
+
+        private static void run_benchmark(String[] args) {
+            int k = 1, k2, i = 0;
+            var n = Integer.parseInt(args[0]);
+
+            gmpz_init(u);
+            gmpz_init(v);
+            gmpz_init_set_si(w, 0);
+            gmpz_init_set_si(n1, 4);
+            gmpz_init_set_si(n2, 3);
+            gmpz_init_set_si(d, 1);
+
+            var outBuf = new StringBuilder();
+
+            for (; ; ) {
+                gmpz_tdiv_q(u, n1, d);
+                gmpz_tdiv_q(v, n2, d);
+
+                if (gmpz_cmp(u, v) == 0) {
+                    outBuf.append(gmpz_get_si(u));
+                    i++;
+                    if (i % 10 == 0)
+                        outBuf.append("\t:").append(i).append("\n");
+                    if (i == n)
+                        break;
+
+                    // extract
+                    gmpz_mul_si(u, u, -10);
+                    gmpz_mul(u, d, u);
+                    gmpz_mul_si(n1, n1, 10);
+                    gmpz_add(n1, n1, u);
+                    gmpz_mul_si(n2, n2, 10);
+                    gmpz_add(n2, n2, u);
+                } else {
+                    // produce
+                    k2 = k * 2;
+                    gmpz_mul_si(u, n1, k2 - 1);
+                    gmpz_add(v, n2, n2);
+                    gmpz_mul_si(w, n1, k - 1);
+                    gmpz_add(n1, u, v);
+                    gmpz_mul_si(u, n2, k + 2);
+                    gmpz_add(n2, w, u);
+                    gmpz_mul_si(d, d, k2 + 1);
+                    k++;
+                }
+            }
+
+            if (i % 10 != 0)
+                outBuf.append(" ".repeat(10 - n % 10)).append("\t:").append(n).append("\n");
+
+            System.out.print(outBuf);
+        }
+
+        public static void main(String[] args) throws Exception {
+            EnergySignal signal = new EnergySignal();
+            while (true)
+            {
+                initialize();
+                if (signal.startSignal() == 0) break;
+                run_benchmark(args);
+                signal.stopSignal();
+            }
+        }
+    }
 dependencies:
     - name: jdk24
       version: 24.0.1+9
+    - name: gmp
+      version: 6.3.0
 ---
 args: [10000]
 expected_stdout: |
