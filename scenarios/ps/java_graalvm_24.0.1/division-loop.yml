@@ -6,7 +6,8 @@ description: |
     Each iteration involves a floating-point comparison, a floating-point division and a floating-point addition, as well as an integer increment.
 code: |
     public class Program {
-        static void run(int m) {
+        static void run_benchmark(String[] args) {
+            int m = Integer.parseInt(args[0]);
             double sum = 0.0;
             int n = 0;
             while (sum < m) {
@@ -18,15 +19,16 @@ code: |
 
         public static void main(String[] args) throws Throwable {
             EnergySignal signal = new EnergySignal();
-            int m = Integer.parseInt(args[0]);
-            while (signal.startSignal() > 0) {
-                run(m);
+            while (true) {
+                if (signal.startSignal() == 0) break;
+                run_benchmark(args);
                 signal.stopSignal();
             }
         }
     }
 dependencies:
-    - graalvm-ce # 23.0.0
+    - name: graalvmPackages.graalvm-ce
+      version: 24.0.1
 ---
 args: [20]
 expected_stdout: |

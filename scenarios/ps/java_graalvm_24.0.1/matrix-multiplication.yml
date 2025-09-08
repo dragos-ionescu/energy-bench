@@ -6,43 +6,50 @@ description: |
     Multiply the two matrices and output the contents of the last cell.
 code: |
     public class Program {
-        static void run(int n) {
+        static void run_benchmark(String[] args) {
+            int n = Integer.parseInt(args[0]);
+            int repetitions = (args.length > 1) ? Integer.parseInt(args[1]) : 1000;
+
             double[] A = new double[n * n];
             double[] B = new double[n * n];
             double[] C = new double[n * n];
-            
+
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
                     A[i*n + j] = B[i*n + j] = i + j;
                 }
             }
-            
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    double sum = 0.0;
-                    for (int k = 0; k < n; k++) {
-                        sum += A[i*n + k] * B[k*n + j];
+
+            double totalResult = 0.0;
+            for (int rep = 0; rep < repetitions; rep++) {
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < n; j++) {
+                        double sum = 0.0;
+                        for (int k = 0; k < n; k++) {
+                            sum += A[i*n + k] * B[k*n + j];
+                        }
+                        C[i*n + j] = sum;
                     }
-                    C[i*n + j] = sum;
                 }
+                totalResult += C[n*n - 1];
             }
-            
-            System.out.printf("%.0f\n", C[n*n - 1]);
+
+            System.out.printf("%.0f\n", totalResult / repetitions);
         }
-        
+
         public static void main(String[] args) throws Throwable {
             EnergySignal signal = new EnergySignal();
-            int n = Integer.parseInt(args[0]);
-            
-            while (signal.startSignal() > 0) {
-                run(n);
+            while (true) {
+                if (signal.startSignal() == 0) break;
+                run_benchmark(args);
                 signal.stopSignal();
             }
         }
     }
 dependencies:
-    - graalvm-ce # 23.0.0
+    - name: graalvmPackages.graalvm-ce
+      version: 24.0.1
 ---
-args: [200]
+args: [200, 1000]
 expected_stdout: |
     18487100

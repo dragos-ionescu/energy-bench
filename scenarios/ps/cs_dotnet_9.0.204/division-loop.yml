@@ -6,6 +6,7 @@ description: |
     Each iteration involves a floating-point comparison, a floating-point division and a floating-point addition, as well as an integer increment.
 code: |
     using System.Runtime.InteropServices;
+
     public class Program {
         [DllImport("libenergy_signal", EntryPoint = "start_signal")]
         public static extern bool start_signal();
@@ -13,7 +14,8 @@ code: |
         [DllImport("libenergy_signal", EntryPoint = "stop_signal")]
         public static extern void stop_signal();
 
-        static void run(int m) {
+        static void run_benchmark(string[] args) {
+            int m = int.Parse(args[0]);
             double sum = 0.0;
             int n = 0;
             while (sum < m) {
@@ -24,15 +26,17 @@ code: |
         }
 
         public static void Main(string[] args) {
-            int m = int.Parse(args[0]);
-            while (start_signal()) {
-                run(m);
+            while (true) {
+                if (!start_signal()) break;
+                run_benchmark(args);
                 stop_signal();
             }
         }
     }
 dependencies:
-    - dotnet-sdk_9 # 9.0.203
+    - name: dotnet-sdk_9
+      version: 9.0.203
+target_framework: net9.0
 options:
     - -c Release
     - -p:OutputType=Exe

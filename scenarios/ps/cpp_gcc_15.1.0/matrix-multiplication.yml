@@ -9,7 +9,10 @@ code: |
     #include <vector>
     #include <energy_signal.h>
 
-    void run(int n) {
+    void run_benchmark(int argc, char **argv) {
+        int n = std::stoi(argv[1]);
+        int repetitions = (argc > 2) ? std::stoi(argv[2]) : 1000;
+
         std::vector<double> A(n * n);
         std::vector<double> B(n * n);
         std::vector<double> C(n * n);
@@ -20,37 +23,38 @@ code: |
             }
         }
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                double sum = 0.0;
-                for (int k = 0; k < n; k++) {
-                    sum += A[i*n + k] * B[k*n + j];
+        for (int rep = 0; rep < repetitions; rep++) {
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    double sum = 0.0;
+                    for (int k = 0; k < n; k++) {
+                        sum += A[i*n + k] * B[k*n + j];
+                    }
+                    C[i*n + j] = sum;
                 }
-                C[i*n + j] = sum;
             }
         }
 
         std::cout << static_cast<int>(C[n*n - 1]) << std::endl;
     }
 
-    int main(int argc, char *argv[]) {
-        int n = std::stoi(argv[1]);
-
-        while (start_signal()) {
-            run(n);
+    int main(int argc, char **argv) {
+        while (1) {
+            if (!start_signal()) break;
+            run_benchmark(argc, argv);
             stop_signal();
         }
-
         return 0;
     }
 dependencies:
-    - gcc14 # 14.2.0
+    - name: gcc15
+      version: 15.1.0
 options:
     - -pipe
     - -O3
     - -march=native
     - -fomit-frame-pointer
 ---
-args: [200]
+args: [200, 1000]
 expected_stdout: |
     18487100
