@@ -204,7 +204,6 @@ code: | # https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/bi
             run_benchmark(argv);
             stop_signal();
         }
-
         return 0;
     }
 dependencies:

@@ -23,6 +23,7 @@ code: |
             }
         }
 
+        double total_result = 0.0;
         for (int rep = 0; rep < repetitions; rep++) {
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
@@ -33,9 +34,10 @@ code: |
                     C[i*n + j] = sum;
                 }
             }
+            total_result += C[n*n - 1];
         }
 
-        printf("%.0f\n", C[n*n - 1]);
+        printf("%.0f\n", total_result / repetitions);
         free(A);
         free(B);
         free(C);

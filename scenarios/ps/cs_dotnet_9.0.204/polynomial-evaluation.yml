@@ -39,10 +39,8 @@ code: |
             Console.WriteLine($"{totalResult / repetitions:F6}");
         }
 
-        public static void Main(string[] args)
-        {
-            while (true)
-            {
+        public static void Main(string[] args) {
+            while (true) {
                 if (!start_signal()) break;
                 run_benchmark(args);
                 stop_signal();
