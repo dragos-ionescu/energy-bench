@@ -1,2 +1,2 @@
 # energy-bench
-A LLM evaluation benchmark focusing on energy-efficient and correct code generation.
+This project is depricated in favor of [green-languages](https://github.com/PLEnergyDev/green-languages). Please refer to it.
